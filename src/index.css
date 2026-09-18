@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-surface-variant: #dae2fd;
+  --color-primary-container: #6d28d9;
+  --color-on-primary-container: #dac5ff;
+  --color-primary: #5300b7;
+  --color-on-primary: #ffffff;
+  --color-surface: #faf8ff;
+  --color-on-surface: #131b2e;
+  --color-surface-container-low: #f2f3ff;
+  --color-surface-container: #eaedff;
+  --color-surface-container-high: #e2e7ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-surface-variant: #4a4455;
+  --color-outline-variant: #ccc3d7;
+  --color-outline: #7b7486;
+  --color-secondary: #5c5f61;
+  --color-background: #faf8ff;
+  --color-on-background: #131b2e;
+  
+  /* Spacing */
+  --spacing-container-padding: 32px;
+  --spacing-stack-padding: 24px;
+  --spacing-card-gap: 20px;
+  --spacing-gutter: 24px;
+
+  /* Typography */
+  --font-display: "Geist", sans-serif;
+  --text-display: 48px;
+  
+  --font-headline-lg: "Geist", sans-serif;
+  --text-headline-lg: 32px;
+
+  --font-headline-md: "Geist", sans-serif;
+  --text-headline-md: 24px;
+
+  --font-body-lg: "Geist", sans-serif;
+  --text-body-lg: 18px;
+
+  --font-body-md: "Geist", sans-serif;
+  --text-body-md: 16px;
+
+  --font-label-caps: "Geist", sans-serif;
+  --text-label-caps: 12px;
+}
+
+@utility primary-glow {
+  box-shadow: 0 0 40px -10px rgba(109, 40, 217, 0.4);
+}
+
+@utility hide-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body {
+  font-family: 'Geist', sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+}
+
+.level-1-surface {
+  background-color: var(--color-surface-container-lowest);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--color-outline-variant);
+}
+
+.glass-header {
+  background: rgba(250, 248, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--color-outline-variant);
+}

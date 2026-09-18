@@ -1,0 +1,364 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Axioma Vet - Buscar Paciente</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "tertiary-fixed": "#d4e4fa",
+                "on-primary-container": "#dac5ff",
+                "on-error-container": "#93000a",
+                "secondary-fixed-dim": "#c4c7c9",
+                "on-tertiary-fixed-variant": "#39485a",
+                "on-surface-variant": "#4a4455",
+                "on-secondary-container": "#626567",
+                "inverse-surface": "#283044",
+                "inverse-on-surface": "#eef0ff",
+                "primary-fixed-dim": "#d3bbff",
+                "on-primary": "#ffffff",
+                "surface-container-high": "#e2e7ff",
+                "primary": "#5300b7",
+                "on-tertiary-fixed": "#0d1c2d",
+                "background": "#faf8ff",
+                "tertiary-container": "#4b596c",
+                "surface-dim": "#d2d9f4",
+                "surface-bright": "#faf8ff",
+                "on-secondary-fixed-variant": "#444749",
+                "error": "#ba1a1a",
+                "outline": "#7b7486",
+                "tertiary": "#334254",
+                "inverse-primary": "#d3bbff",
+                "surface-container-low": "#f2f3ff",
+                "primary-container": "#6d28d9",
+                "on-surface": "#131b2e",
+                "surface": "#faf8ff",
+                "on-tertiary": "#ffffff",
+                "secondary": "#5c5f61",
+                "outline-variant": "#ccc3d7",
+                "tertiary-fixed-dim": "#b9c8de",
+                "on-tertiary-container": "#c1d0e6",
+                "on-primary-fixed-variant": "#5b00c5",
+                "secondary-fixed": "#e0e3e5",
+                "on-secondary": "#ffffff",
+                "on-primary-fixed": "#250059",
+                "on-secondary-fixed": "#191c1e",
+                "surface-tint": "#7331df",
+                "surface-container-lowest": "#ffffff",
+                "surface-container": "#eaedff",
+                "error-container": "#ffdad6",
+                "secondary-container": "#e0e3e5",
+                "primary-fixed": "#ebddff",
+                "surface-container-highest": "#dae2fd",
+                "on-background": "#131b2e",
+                "on-error": "#ffffff",
+                "surface-variant": "#dae2fd",
+                
+                // Alert colors
+                "alert-red": "#ef4444",
+                "alert-yellow": "#eab308",
+                "alert-green": "#22c55e",
+                "alert-gray": "#9ca3af"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px",
+                "card": "1.5rem"
+        },
+        "spacing": {
+                "gutter": "24px",
+                "xl": "64px",
+                "margin-mobile": "16px",
+                "base": "8px",
+                "md": "24px",
+                "margin-desktop": "48px",
+                "lg": "40px",
+                "sm": "12px",
+                "xs": "4px",
+                "container-padding": "32px",
+                "card-gap": "20px"
+        },
+        "fontFamily": {
+                "headline-lg-mobile": ["Geist"],
+                "display": ["Geist"],
+                "headline-lg": ["Geist"],
+                "label-md": ["Geist"],
+                "headline-md": ["Geist"],
+                "body-lg": ["Geist"],
+                "label-sm": ["Geist"],
+                "body-md": ["Geist"]
+        },
+        "fontSize": {
+                "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+        },
+        "boxShadow": {
+            "card": "0 4px 20px -4px rgba(109, 40, 217, 0.1)",
+            "card-hover": "0 10px 30px -5px rgba(109, 40, 217, 0.2)",
+            "search": "0 8px 30px -10px rgba(109, 40, 217, 0.15)"
+        }
+},
+    },
+  }
+</script>
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Geist', sans-serif;
+        }
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .search-glow:focus-within {
+            box-shadow: 0 0 0 4px rgba(109, 40, 217, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col items-center p-container-padding antialiased">
+<!-- Decorative background elements -->
+<div class="fixed inset-0 z-0 pointer-events-none opacity-40 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-surface-container-high via-background to-background"></div>
+<!-- Header / Navigation -->
+<header class="relative z-10 w-full max-w-7xl flex items-center justify-between mb-12">
+<button class="flex items-center gap-2 text-primary font-label-md hover:text-primary-container transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+        Volver
+    </button>
+<div class="font-headline-md text-on-background cursor-default">
+        Axioma Vet
+    </div>
+<div class="w-20"></div> <!-- Spacer for alignment -->
+</header>
+<main class="relative z-10 w-full max-w-7xl flex flex-col items-center gap-12">
+<!-- Search Bar Section -->
+<div class="w-full max-w-3xl flex flex-col items-center gap-6">
+<h1 class="font-display text-display text-on-background tracking-tighter text-center">
+            Buscar paciente
+        </h1>
+<div class="w-full relative group">
+<div class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline text-[32px] group-focus-within:text-primary transition-colors">search</span>
+</div>
+<input autofocus="" class="w-full bg-surface-container-lowest text-on-surface font-body-lg h-20 pl-20 pr-6 rounded-full border-2 border-outline-variant outline-none transition-all duration-300 hover:border-outline focus:border-primary search-glow shadow-search placeholder:text-outline-variant" placeholder="Nombre, dueño, teléfono..." type="text" value="Lu">
+<button class="absolute inset-y-0 right-0 pr-6 flex items-center">
+<span class="material-symbols-outlined text-outline hover:text-on-surface transition-colors cursor-pointer">cancel</span>
+</button>
+</div>
+</div>
+<!-- Results Count -->
+<div class="w-full flex items-center justify-between mt-4">
+<h2 class="font-headline-md text-on-surface-variant">Resultados para "Lu" <span class="font-body-md text-outline ml-2">(4 pacientes)</span></h2>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 px-4 py-2 rounded-full border border-outline-variant hover:bg-surface-container-low transition-colors text-on-surface font-label-md">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+                Filtros
+            </button>
+</div>
+</div>
+<!-- Results Grid -->
+<div class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Patient Card 1 -->
+<article class="relative flex flex-col bg-surface-container-lowest rounded-card overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300 border border-surface-container-high group cursor-pointer">
+<!-- Status Badge (Top Border) -->
+<div class="h-3 w-full bg-alert-green"></div>
+<div class="p-6 flex flex-col gap-6">
+<!-- Header -->
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[32px]">pets</span>
+</div>
+<div>
+<h3 class="font-headline-lg text-on-surface">Luna</h3>
+<p class="font-label-md text-outline">Perro • Golden Retriever</p>
+</div>
+</div>
+<div class="px-3 py-1 bg-surface-container-high rounded-full font-label-sm text-on-surface-variant uppercase tracking-wide">
+                        AL DÍA
+                    </div>
+</div>
+<!-- Divider -->
+<div class="w-full h-px bg-surface-variant"></div>
+<!-- Data -->
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-outline uppercase tracking-wider">Dueño</span>
+<span class="font-body-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-outline">person</span>
+                            María Gómez
+                        </span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-outline uppercase tracking-wider">Contacto</span>
+<span class="font-body-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-outline">phone</span>
+                            555-0123
+                        </span>
+</div>
+</div>
+<!-- Action -->
+<button class="w-full py-3 mt-2 rounded-xl bg-surface-container text-primary font-label-md group-hover:bg-primary group-hover:text-on-primary transition-colors">
+                    Ver historial
+                </button>
+</div>
+</article>
+<!-- Patient Card 2 -->
+<article class="relative flex flex-col bg-surface-container-lowest rounded-card overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300 border border-surface-container-high group cursor-pointer">
+<!-- Status Badge (Top Border) -->
+<div class="h-3 w-full bg-alert-red"></div>
+<div class="p-6 flex flex-col gap-6">
+<!-- Header -->
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[32px]">pest_control_rodent</span>
+</div>
+<div>
+<h3 class="font-headline-lg text-on-surface">Lulo</h3>
+<p class="font-label-md text-outline">Conejo • Enano</p>
+</div>
+</div>
+<div class="px-3 py-1 bg-error-container text-on-error-container rounded-full font-label-sm uppercase tracking-wide flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">warning</span>
+                        URGENTE
+                    </div>
+</div>
+<!-- Divider -->
+<div class="w-full h-px bg-surface-variant"></div>
+<!-- Data -->
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-outline uppercase tracking-wider">Dueño</span>
+<span class="font-body-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-outline">person</span>
+                            Carlos Ruiz
+                        </span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-outline uppercase tracking-wider">Contacto</span>
+<span class="font-body-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-outline">phone</span>
+                            555-8890
+                        </span>
+</div>
+</div>
+<!-- Action -->
+<button class="w-full py-3 mt-2 rounded-xl bg-surface-container text-primary font-label-md group-hover:bg-primary group-hover:text-on-primary transition-colors">
+                    Ver historial
+                </button>
+</div>
+</article>
+<!-- Patient Card 3 -->
+<article class="relative flex flex-col bg-surface-container-lowest rounded-card overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300 border border-surface-container-high group cursor-pointer">
+<!-- Status Badge (Top Border) -->
+<div class="h-3 w-full bg-alert-yellow"></div>
+<div class="p-6 flex flex-col gap-6">
+<!-- Header -->
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[32px]">pets</span>
+</div>
+<div>
+<h3 class="font-headline-lg text-on-surface">Lucas</h3>
+<p class="font-label-md text-outline">Gato • Persa</p>
+</div>
+</div>
+<div class="px-3 py-1 bg-surface-container-high rounded-full font-label-sm text-on-surface-variant uppercase tracking-wide">
+                        PENDIENTE
+                    </div>
+</div>
+<!-- Divider -->
+<div class="w-full h-px bg-surface-variant"></div>
+<!-- Data -->
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-outline uppercase tracking-wider">Dueño</span>
+<span class="font-body-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-outline">person</span>
+                            Ana Silva
+                        </span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-outline uppercase tracking-wider">Contacto</span>
+<span class="font-body-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-outline">phone</span>
+                            555-3421
+                        </span>
+</div>
+</div>
+<!-- Action -->
+<button class="w-full py-3 mt-2 rounded-xl bg-surface-container text-primary font-label-md group-hover:bg-primary group-hover:text-on-primary transition-colors">
+                    Ver historial
+                </button>
+</div>
+</article>
+<article class="relative flex flex-col bg-surface-container-lowest rounded-card overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300 border border-surface-container-high group cursor-pointer grayscale opacity-75">
+<!-- Status Badge (Top Border) -->
+<div class="h-3 w-full bg-outline-variant"></div>
+<div class="p-6 flex flex-col gap-6">
+<!-- Header -->
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[32px]">eco</span>
+</div>
+<div>
+<h3 class="font-headline-lg text-on-surface">Coco</h3>
+<p class="font-label-md text-outline">Gato • Persa</p>
+</div>
+</div>
+<div class="px-3 py-1 bg-surface-container-high rounded-full font-label-sm text-on-surface-variant uppercase tracking-wide">
+                        FALLECIDO
+                    </div>
+</div>
+<!-- Divider -->
+<div class="w-full h-px bg-surface-variant"></div>
+<!-- Data -->
+<div class="grid grid-cols-1 gap-4">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-outline uppercase tracking-wider">Fallecimiento</span>
+<span class="font-body-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-outline">calendar_today</span>
+                            12/05/2023
+                        </span>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-outline uppercase tracking-wider">Dueño</span>
+<span class="font-body-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-outline">person</span>
+                            Roberto Sanz
+                        </span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-outline uppercase tracking-wider">Contacto</span>
+<span class="font-body-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-outline">phone</span>
+                            555-9988
+                        </span>
+</div>
+</div>
+</div>
+<!-- Action -->
+<button class="w-full py-3 mt-2 rounded-xl bg-surface-container-low text-outline font-label-md cursor-default">
+                    Expediente bloqueado
+                </button>
+</div>
+</article></div>
+</main>
+</body></html>
