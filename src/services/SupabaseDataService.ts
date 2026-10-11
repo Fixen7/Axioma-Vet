@@ -55,7 +55,7 @@ export class SupabaseDataService implements IDataService {
 
   // PATIENTS
   async getPatients(): Promise<Patient[]> {
-    const { data, error } = await supabase.from('patients').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('patients').select('*').eq('workspace_id', this.getWorkspaceId()).order('created_at', { ascending: false });
     if (error) throw error;
     return toCamel(data) as Patient[];
   }
@@ -65,7 +65,7 @@ export class SupabaseDataService implements IDataService {
   }
 
   async getPatientById(id: string): Promise<Patient | null> {
-    const { data, error } = await supabase.from('patients').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('patients').select('*').eq('id', id).eq('workspace_id', this.getWorkspaceId()).single();
     if (error) return null;
     return toCamel(data) as Patient;
   }
@@ -77,7 +77,7 @@ export class SupabaseDataService implements IDataService {
       const { workspace_id: _, ...updates } = toSnake(patient);
       const snakeData = { ...updates, created_by: userId };
 
-      const { data, error } = await supabase.from('patients').update(snakeData).eq('id', patient.id).select().single();
+      const { data, error } = await supabase.from('patients').update(snakeData).eq('id', patient.id).eq('workspace_id', this.getWorkspaceId()).select().single();
       if (error) throw error;
       return toCamel(data) as Patient;
     
@@ -94,7 +94,7 @@ export class SupabaseDataService implements IDataService {
 
   async updatePatient(patientId: string, updates: Partial<Patient>): Promise<Patient> {
     const { workspace_id: _, ...snakeData } = toSnake(updates) as any;
-    const { data, error } = await supabase.from('patients').update(snakeData).eq('id', patientId).select().single();
+    const { data, error } = await supabase.from('patients').update(snakeData).eq('id', patientId).eq('workspace_id', this.getWorkspaceId()).select().single();
     if (error) throw error;
     return toCamel(data) as Patient;
   }
@@ -109,19 +109,19 @@ export class SupabaseDataService implements IDataService {
   }
 
   async deletePatient(id: string): Promise<void> {
-    const { error } = await supabase.from('patients').delete().eq('id', id);
+    const { error } = await supabase.from('patients').delete().eq('id', id).eq('workspace_id', this.getWorkspaceId());
     if (error) throw error;
   }
 
   // CONSULTATIONS
   async getAllConsultations(): Promise<Consultation[]> {
-    const { data, error } = await supabase.from('consultations').select('*');
+    const { data, error } = await supabase.from('consultations').select('*').eq('workspace_id', this.getWorkspaceId());
     if (error) throw error;
     return toCamel(data) as Consultation[];
   }
 
   async getConsultationsByPatient(patientId: string): Promise<Consultation[]> {
-    const { data, error } = await supabase.from('consultations').select('*').eq('patient_id', patientId).order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('consultations').select('*').eq('patient_id', patientId).eq('workspace_id', this.getWorkspaceId()).order('created_at', { ascending: false });
     if (error) throw error;
     return toCamel(data) as Consultation[];
   }
@@ -133,7 +133,7 @@ export class SupabaseDataService implements IDataService {
       const { workspace_id: _, ...updates } = toSnake(consultation);
       const snakeData = { ...updates, created_by: userId };
 
-      const { data, error } = await supabase.from('consultations').update(snakeData).eq('id', consultation.id).select().single();
+      const { data, error } = await supabase.from('consultations').update(snakeData).eq('id', consultation.id).eq('workspace_id', this.getWorkspaceId()).select().single();
       if (error) throw error;
       return toCamel(data) as Consultation;
     
@@ -149,13 +149,13 @@ export class SupabaseDataService implements IDataService {
   }
 
   async deleteConsultation(id: string): Promise<void> {
-    const { error } = await supabase.from('consultations').delete().eq('id', id);
+    const { error } = await supabase.from('consultations').delete().eq('id', id).eq('workspace_id', this.getWorkspaceId());
     if (error) throw error;
   }
 
   // PRESCRIPTIONS
   async getPrescriptionsByPatient(patientId: string): Promise<Prescription[]> {
-    const { data, error } = await supabase.from('prescriptions').select('*').eq('patient_id', patientId).order('date', { ascending: false });
+    const { data, error } = await supabase.from('prescriptions').select('*').eq('patient_id', patientId).eq('workspace_id', this.getWorkspaceId()).order('date', { ascending: false });
     if (error) throw error;
     return toCamel(data) as Prescription[];
   }
@@ -167,7 +167,7 @@ export class SupabaseDataService implements IDataService {
       const { workspace_id: _, ...updates } = toSnake(prescription);
       const snakeData = { ...updates, created_by: userId };
 
-      const { data, error } = await supabase.from('prescriptions').update(snakeData).eq('id', prescription.id).select().single();
+      const { data, error } = await supabase.from('prescriptions').update(snakeData).eq('id', prescription.id).eq('workspace_id', this.getWorkspaceId()).select().single();
       if (error) throw error;
       return toCamel(data) as Prescription;
     
@@ -183,19 +183,19 @@ export class SupabaseDataService implements IDataService {
   }
 
   async deletePrescription(id: string): Promise<void> {
-    const { error } = await supabase.from('prescriptions').delete().eq('id', id);
+    const { error } = await supabase.from('prescriptions').delete().eq('id', id).eq('workspace_id', this.getWorkspaceId());
     if (error) throw error;
   }
 
   // VACCINES
   async getAllVaccines(): Promise<Vaccine[]> {
-    const { data, error } = await supabase.from('vaccines').select('*');
+    const { data, error } = await supabase.from('vaccines').select('*').eq('workspace_id', this.getWorkspaceId());
     if (error) throw error;
     return toCamel(data) as Vaccine[];
   }
 
   async getVaccinesByPatient(patientId: string): Promise<Vaccine[]> {
-    const { data, error } = await supabase.from('vaccines').select('*').eq('patient_id', patientId).order('application_date', { ascending: false });
+    const { data, error } = await supabase.from('vaccines').select('*').eq('patient_id', patientId).eq('workspace_id', this.getWorkspaceId()).order('application_date', { ascending: false });
     if (error) throw error;
     return toCamel(data) as Vaccine[];
   }
@@ -207,7 +207,7 @@ export class SupabaseDataService implements IDataService {
       const { workspace_id: _, ...updates } = toSnake(vaccine);
       const snakeData = { ...updates, created_by: userId };
 
-      const { data, error } = await supabase.from('vaccines').update(snakeData).eq('id', vaccine.id).select().single();
+      const { data, error } = await supabase.from('vaccines').update(snakeData).eq('id', vaccine.id).eq('workspace_id', this.getWorkspaceId()).select().single();
       if (error) throw error;
       return toCamel(data) as Vaccine;
     
@@ -223,13 +223,13 @@ export class SupabaseDataService implements IDataService {
   }
 
   async deleteVaccine(id: string): Promise<void> {
-    const { error } = await supabase.from('vaccines').delete().eq('id', id);
+    const { error } = await supabase.from('vaccines').delete().eq('id', id).eq('workspace_id', this.getWorkspaceId());
     if (error) throw error;
   }
 
   // LABS
   async getLabsByPatient(patientId: string): Promise<LabResult[]> {
-    const { data, error } = await supabase.from('lab_results').select('*').eq('patient_id', patientId).order('date', { ascending: false });
+    const { data, error } = await supabase.from('lab_results').select('*').eq('patient_id', patientId).eq('workspace_id', this.getWorkspaceId()).order('date', { ascending: false });
     if (error) throw error;
     return toCamel(data) as LabResult[];
   }
@@ -241,7 +241,7 @@ export class SupabaseDataService implements IDataService {
       const { workspace_id: _, ...updates } = toSnake(lab);
       const snakeData = { ...updates, created_by: userId };
 
-      const { data, error } = await supabase.from('lab_results').update(snakeData).eq('id', lab.id).select().single();
+      const { data, error } = await supabase.from('lab_results').update(snakeData).eq('id', lab.id).eq('workspace_id', this.getWorkspaceId()).select().single();
       if (error) throw error;
       return toCamel(data) as LabResult;
     
@@ -257,19 +257,19 @@ export class SupabaseDataService implements IDataService {
   }
 
   async deleteLab(id: string): Promise<void> {
-    const { error } = await supabase.from('lab_results').delete().eq('id', id);
+    const { error } = await supabase.from('lab_results').delete().eq('id', id).eq('workspace_id', this.getWorkspaceId());
     if (error) throw error;
   }
 
   // SURGERIES
   async getAllSurgeries(): Promise<Surgery[]> {
-    const { data, error } = await supabase.from('surgeries').select('*');
+    const { data, error } = await supabase.from('surgeries').select('*').eq('workspace_id', this.getWorkspaceId());
     if (error) throw error;
     return toCamel(data) as Surgery[];
   }
 
   async getSurgeriesByPatient(patientId: string): Promise<Surgery[]> {
-    const { data, error } = await supabase.from('surgeries').select('*').eq('patient_id', patientId).order('date', { ascending: false });
+    const { data, error } = await supabase.from('surgeries').select('*').eq('patient_id', patientId).eq('workspace_id', this.getWorkspaceId()).order('date', { ascending: false });
     if (error) throw error;
     return toCamel(data) as Surgery[];
   }
@@ -281,7 +281,7 @@ export class SupabaseDataService implements IDataService {
       const { workspace_id: _, ...updates } = toSnake(surgery);
       const snakeData = { ...updates, created_by: userId };
 
-      const { data, error } = await supabase.from('surgeries').update(snakeData).eq('id', surgery.id).select().single();
+      const { data, error } = await supabase.from('surgeries').update(snakeData).eq('id', surgery.id).eq('workspace_id', this.getWorkspaceId()).select().single();
       if (error) throw error;
       return toCamel(data) as Surgery;
     
@@ -297,7 +297,7 @@ export class SupabaseDataService implements IDataService {
   }
 
   async deleteSurgery(id: string): Promise<void> {
-    const { error } = await supabase.from('surgeries').delete().eq('id', id);
+    const { error } = await supabase.from('surgeries').delete().eq('id', id).eq('workspace_id', this.getWorkspaceId());
     if (error) throw error;
   }
 
@@ -327,7 +327,7 @@ export class SupabaseDataService implements IDataService {
 
   // MANUAL EVENTS
   async getManualEvents(): Promise<ManualEvent[]> {
-    const { data, error } = await supabase.from('manual_events').select('*');
+    const { data, error } = await supabase.from('manual_events').select('*').eq('workspace_id', this.getWorkspaceId());
     if (error) throw error;
     return toCamel(data) as ManualEvent[];
   }
@@ -344,7 +344,7 @@ export class SupabaseDataService implements IDataService {
 
   // GROOMINGS
   async getGroomingsByPatient(patientId: string): Promise<Grooming[]> {
-    const { data, error } = await supabase.from('groomings').select('*').eq('patient_id', patientId).order('date', { ascending: false });
+    const { data, error } = await supabase.from('groomings').select('*').eq('patient_id', patientId).eq('workspace_id', this.getWorkspaceId()).order('date', { ascending: false });
     if (error) throw error;
     return toCamel(data) as Grooming[];
   }
@@ -356,7 +356,7 @@ export class SupabaseDataService implements IDataService {
       const { workspace_id: _, ...updates } = toSnake(grooming);
       const snakeData = { ...updates, created_by: userId };
       
-      const { data, error } = await supabase.from('groomings').update(snakeData).eq('id', grooming.id).select().single();
+      const { data, error } = await supabase.from('groomings').update(snakeData).eq('id', grooming.id).eq('workspace_id', this.getWorkspaceId()).select().single();
       if (error) throw error;
       return toCamel(data) as Grooming;
     } else {
@@ -370,13 +370,13 @@ export class SupabaseDataService implements IDataService {
   }
 
   async deleteGrooming(id: string): Promise<void> {
-    const { error } = await supabase.from('groomings').delete().eq('id', id);
+    const { error } = await supabase.from('groomings').delete().eq('id', id).eq('workspace_id', this.getWorkspaceId());
     if (error) throw error;
   }
 
   // WEIGHT RECORDS
   async getWeightRecordsByPatient(patientId: string): Promise<WeightRecord[]> {
-    const { data, error } = await supabase.from('weight_records').select('*').eq('patient_id', patientId).order('date', { ascending: false });
+    const { data, error } = await supabase.from('weight_records').select('*').eq('patient_id', patientId).eq('workspace_id', this.getWorkspaceId()).order('date', { ascending: false });
     if (error) throw error;
     return toCamel(data) as WeightRecord[];
   }
@@ -388,7 +388,7 @@ export class SupabaseDataService implements IDataService {
       const { workspace_id: _, ...updates } = toSnake(record);
       const snakeData = { ...updates, created_by: userId };
 
-      const { data, error } = await supabase.from('weight_records').update(snakeData).eq('id', record.id).select().single();
+      const { data, error } = await supabase.from('weight_records').update(snakeData).eq('id', record.id).eq('workspace_id', this.getWorkspaceId()).select().single();
       if (error) throw error;
       return toCamel(data) as WeightRecord;
     
@@ -404,7 +404,7 @@ export class SupabaseDataService implements IDataService {
   }
 
   async deleteWeightRecord(id: string): Promise<void> {
-    const { error } = await supabase.from('weight_records').delete().eq('id', id);
+    const { error } = await supabase.from('weight_records').delete().eq('id', id).eq('workspace_id', this.getWorkspaceId());
     if (error) throw error;
   }
 }

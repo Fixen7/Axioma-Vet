@@ -18,8 +18,19 @@ export default function Login() {
 
   const handleLogin = async () => {
     setIsConnecting(true);
-    const coreUrl = import.meta.env.VITE_CORE_URL;
-    window.location.href = `${coreUrl}/api/auth/oauth?provider=google&returnTo=${encodeURIComponent(window.location.origin + '/')}`;
+    try {
+      const { generateCodeVerifier, generateCodeChallenge } = await import('../utils/pkce');
+      const verifier = generateCodeVerifier();
+      sessionStorage.setItem('pkce_verifier', verifier);
+      const challenge = await generateCodeChallenge(verifier);
+      
+      const currentAbsUrl = encodeURIComponent(window.location.origin + '/');
+      const coreUrl = import.meta.env.VITE_CORE_URL;
+      window.location.href = `${coreUrl}/api/auth/redirect-secure?challenge=${challenge}&returnTo=${currentAbsUrl}`;
+    } catch (e) {
+      console.error('Error al iniciar inicio de sesión con Core', e);
+      setIsConnecting(false);
+    }
   };
 
   if (isLoading) return null;

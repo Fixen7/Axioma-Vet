@@ -1,16 +1,37 @@
 import { supabase } from './supabase';
 
-export interface ModuleAccessStatus {
-  module: string;
-  access: boolean;
-  status: 'trial' | 'active' | 'expired' | 'none' | 'error';
-  source: 'trial' | 'subscription_item' | 'manual' | null;
-  expiresAt: string | null;
-  daysRemaining: number | null;
-  error?: boolean;
+export interface CommercialExperienceContext {
+  application: string;
+  access: {
+    allowed: boolean;
+    source: 'trial' | 'subscription' | 'manual' | 'none';
+    expiresAt: string | null;
+    daysRemaining: number | null;
+  };
+  commercial: {
+    phase: 
+      | 'trial_active' 
+      | 'trial_expiring' 
+      | 'trial_expired' 
+      | 'subscription_active' 
+      | 'subscription_canceling' 
+      | 'subscription_past_due' 
+      | 'subscription_unpaid' 
+      | 'subscription_expired' 
+      | 'subscription_canceled' 
+      | 'no_access';
+    headline: string | null;
+    message: string | null;
+    cta: {
+      action: 'OPEN_STORE' | 'MANAGE_SUBSCRIPTION' | 'NONE';
+      label: string;
+    } | null;
+  };
 }
 
-export async function getModuleAccessStatus(workspaceId: string, moduleId: string): Promise<ModuleAccessStatus> {
+export type ModuleAccessStatus = CommercialExperienceContext;
+
+export async function getModuleAccessStatus(workspaceId: string, moduleId: string): Promise<CommercialExperienceContext> {
   const { data: { session } } = await supabase.auth.getSession();
   
   if (!session?.access_token) {

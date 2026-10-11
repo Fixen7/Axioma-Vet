@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.organization?.id) {
         try {
           vetAccessStatus = await getModuleAccessStatus(data.organization.id, 'vet');
-          hasVetAccess = vetAccessStatus.access;
+          hasVetAccess = !!vetAccessStatus?.access?.allowed;
         } catch (e) {
           // Si Core falla, denegamos el acceso por seguridad (no hacer fallback ciego)
           hasVetAccess = false;
@@ -120,32 +120,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
     
-    // 1. Check for tokens in URL hash (Session passthrough from Core)
-    if (typeof window !== 'undefined' && window.location.hash) {
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token');
-      
-      if (accessToken && refreshToken) {
-        // Clear the URL immediately to prevent token leakage
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-        
-        supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken
-        }).then(({ data, error }) => {
-          if (!error && data.session && isMounted) {
-            checkContextAndSetUser(data.session);
-          }
-        }).catch(() => {
-          // Silent catch
-        });
-      }
-    }
+    const handlePkceFlow = async () => {
+      if (typeof window === 'undefined') return;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (isMounted) checkContextAndSetUser(session);
-    });
+      const urlParams = new URLSearchParams(window.location.search);
+      const ticket = urlParams.get('ticket');
+
+      if (ticket) {
+        const codeVerifier = sessionStorage.getItem('pkce_verifier');
+        if (codeVerifier) {
+          try {
+            const coreUrl = import.meta.env.VITE_CORE_URL;
+            const res = await fetch(`${coreUrl}/api/internal/auth/exchange`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ticket, code_verifier: codeVerifier })
+            });
+
+            if (res.ok) {
+              const { accessToken, refreshToken, workspaceId } = await res.json();
+              if (workspaceId) {
+                localStorage.setItem('axioma-vet-workspace', workspaceId);
+              }
+              await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+              
+              sessionStorage.removeItem('pkce_verifier');
+              window.history.replaceState(null, '', window.location.pathname);
+              
+              const { data } = await supabase.auth.getSession();
+              if (data.session && isMounted) {
+                checkContextAndSetUser(data.session);
+              }
+              return;
+            }
+          } catch (e) {
+            console.error('Error in PKCE exchange', e);
+          }
+        }
+        sessionStorage.removeItem('pkce_verifier');
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (isMounted) {
+        checkContextAndSetUser(currentSession);
+      }
+    };
+    
+    handlePkceFlow();
+
+
 
     const {
       data: { subscription },

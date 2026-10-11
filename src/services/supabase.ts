@@ -1,4 +1,4 @@
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -13,13 +13,29 @@ if (import.meta.env.VITE_AXIOMA_ENV === 'development') {
   }
 }
 
-const cookieDomain = import.meta.env.VITE_COOKIE_DOMAIN;
+const customFetch = (url: RequestInfo | URL, options?: RequestInit) => {
+  const workspaceId = typeof window !== 'undefined' ? window.localStorage.getItem('axioma-vet-workspace') : null;
+  const headers = new Headers(options?.headers);
+  if (workspaceId) {
+    headers.set('x-workspace-id', workspaceId);
+  }
+  return fetch(url, { ...options, headers });
+};
 
 // Inicializamos el cliente apuntando al schema 'vet'
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
+// Al ser una SPA, usamos createClient estándar con localStorage propio
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   db: {
     schema: 'vet',
   },
-  ...(cookieDomain ? { cookieOptions: { domain: cookieDomain } } : {}),
+  auth: {
+    autoRefreshToken: false,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'axioma-vet-auth',
+  },
+  global: {
+    fetch: customFetch
+  }
 });
+
 
