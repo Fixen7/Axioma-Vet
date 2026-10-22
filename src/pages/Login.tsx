@@ -33,6 +33,14 @@ export default function Login() {
     }
   };
 
+  // Si viene con el parametro sso=true, auto-conectar con Core
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('sso') === 'true' && !user && !isLoading && !isConnecting) {
+      handleLogin();
+    }
+  }, [user, isLoading, isConnecting]);
+
   if (isLoading) return null;
 
   return (
@@ -106,3 +114,4 @@ export default function Login() {
     </div>
   );
 }
+

@@ -44,11 +44,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const coreUrl = import.meta.env.VITE_CORE_URL;
+      const cachedWorkspaceId = localStorage.getItem('axioma-vet-workspace');
+      const reqHeaders: Record<string, string> = {
+        'Authorization': `Bearer ${currentSession.access_token}`
+      };
+      if (cachedWorkspaceId) {
+        reqHeaders['x-workspace-id'] = cachedWorkspaceId;
+      }
+
       const response = await fetch(`${coreUrl}/api/me/context`, {
         credentials: 'include',
-        headers: {
-          'Authorization': `Bearer ${currentSession.access_token}`
-        }
+        headers: reqHeaders
       });
 
       if (!response.ok) {
@@ -70,17 +76,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const hasStockAccess = data.entitlements && data.entitlements.includes("stock");
       setHasStockAccess(hasStockAccess);
 
-      if (!data.organization?.id && currentSession?.user) {
+      const hasAnyOrg = !!data.organization?.id || (Array.isArray(data.organizations) && data.organizations.length > 0);
+      if (!hasAnyOrg && currentSession?.user) {
         window.location.href = `${coreUrl}/onboarding?app=vet&returnTo=${encodeURIComponent(window.location.href)}`;
         return;
+      }
+
+      const activeOrg = data.organization || (Array.isArray(data.organizations) && data.organizations.length > 0 ? data.organizations[0] : null);
+      if (activeOrg?.id) {
+        localStorage.setItem('axioma-vet-workspace', activeOrg.id);
       }
 
       let vetAccessStatus = null;
       let hasVetAccess = false;
 
-      if (data.organization?.id) {
+      if (activeOrg?.id) {
         try {
-          vetAccessStatus = await getModuleAccessStatus(data.organization.id, 'vet');
+          vetAccessStatus = await getModuleAccessStatus(activeOrg.id, 'vet');
           hasVetAccess = !!vetAccessStatus?.access?.allowed;
         } catch (e) {
           // Si Core falla, denegamos el acceso por seguridad (no hacer fallback ciego)
@@ -88,10 +100,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      if (hasVetAccess && data.organization?.id) {
+      if (hasVetAccess && activeOrg?.id) {
         setAccessDenied(false);
-        setActiveWorkspaceId(data.organization.id);
-        setActiveWorkspace({ id: data.organization.id, name: data.organization.name });
+        setActiveWorkspaceId(activeOrg.id);
+        setActiveWorkspace({ id: activeOrg.id, name: activeOrg.name });
         setModuleAccess(vetAccessStatus);
         setSession(currentSession);
         setUser(currentSession.user);
@@ -262,3 +274,4 @@ export function useAuth() {
   }
   return context;
 }
+
