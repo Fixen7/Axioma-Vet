@@ -139,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const ticket = urlParams.get('ticket');
 
       if (ticket) {
-        const codeVerifier = sessionStorage.getItem('pkce_verifier');
+        const codeVerifier = localStorage.getItem('axioma_pkce_verifier') || sessionStorage.getItem('pkce_verifier');
         if (codeVerifier) {
           try {
             const coreUrl = import.meta.env.VITE_CORE_URL;
@@ -157,6 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
               
               sessionStorage.removeItem('pkce_verifier');
+              localStorage.removeItem('axioma_pkce_verifier');
               window.history.replaceState(null, '', window.location.pathname);
               
               const { data } = await supabase.auth.getSession();
@@ -170,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
         sessionStorage.removeItem('pkce_verifier');
+        localStorage.removeItem('axioma_pkce_verifier');
         window.history.replaceState(null, '', window.location.pathname);
       }
 
