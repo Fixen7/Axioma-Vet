@@ -1,3 +1,4 @@
+import { ShieldCheck, ArrowRight } from 'lucide-react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
@@ -109,12 +110,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentSession.user);
       } else {
         setAccessDenied(true);
-        setActiveWorkspaceId(null);
-        setActiveWorkspace(null);
-        setModuleAccess(null);
-        setSession(null);
-        setUser(null);
-        setCoreUser(null);
+        setActiveWorkspaceId(activeOrg?.id || null);
+        setActiveWorkspace(activeOrg ? { id: activeOrg.id, name: activeOrg.name } : null);
+        setModuleAccess(vetAccessStatus);
+        setSession(currentSession);
+        setUser(currentSession.user);
       }
     } catch (e) {
       console.error(e);
@@ -230,35 +230,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         </div>
       ) : accessDenied && !isPublicRoute ? (
         <div className="min-h-screen flex items-center justify-center bg-surface p-4">
-          <div className="max-w-md w-full bg-surface-container rounded-3xl p-8 shadow-xl text-center border border-outline-variant">
-            <h2 className="text-2xl font-bold text-on-surface mb-2">Acceso Denegado</h2>
-            <p className="text-on-surface-variant mb-8">
-              Tu cuenta Axioma está activa, pero Axioma Vet no está habilitado para ninguno de tus espacios de trabajo.
+          <div className="max-w-lg w-full bg-surface-container rounded-3xl p-8 shadow-2xl text-center border border-outline-variant/60">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary mx-auto mb-6 flex items-center justify-center">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
+
+            <h2 className="text-2xl font-bold text-on-surface mb-2 font-display">
+              {moduleAccess?.commercial?.phase === 'trial_expired'
+                ? 'Tu periodo de prueba ha finalizado'
+                : moduleAccess?.commercial?.phase === 'subscription_past_due' || moduleAccess?.commercial?.phase === 'subscription_unpaid'
+                  ? 'Suscripción pendiente de pago'
+                  : 'Acceso a Axioma Vet'}
+            </h2>
+
+            <p className="text-on-surface-variant mb-6 text-sm leading-relaxed">
+              {moduleAccess?.commercial?.phase === 'trial_expired'
+                ? `Esperamos que hayas disfrutado tus 7 días de prueba. Para continuar registrando historias clínicas y pacientes en ${activeWorkspace?.name || 'tu clínica'}, activa tu plan.`
+                : moduleAccess?.commercial?.phase === 'subscription_past_due' || moduleAccess?.commercial?.phase === 'subscription_unpaid'
+                  ? 'No pudimos procesar la renovación de tu suscripción. Regulariza tu método de pago para reanudar el acceso.'
+                  : `Axioma Vet no está activo para el espacio de trabajo "${activeWorkspace?.name || 'seleccionado'}". Adquiere un plan para habilitarlo de inmediato.`}
             </p>
+
             <div className="space-y-3">
+              <button 
+                onClick={() => {
+                  const coreUrl = import.meta.env.VITE_CORE_URL;
+                  window.location.href = `${coreUrl}/store?app=vet`;
+                }}
+                className="w-full bg-primary hover:bg-primary/90 text-on-primary font-bold py-3.5 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Ver Planes y Suscribirme (Desde $15/mes)</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
               {hasStockAccess && (
                 <button 
                   onClick={() => {
                       const stockUrl = import.meta.env.VITE_STOCK_URL;
                       window.location.href = stockUrl;
                   }}
-                  className="w-full bg-primary hover:bg-primary/90 text-on-primary font-semibold py-3 rounded-xl transition-colors"
+                  className="w-full bg-surface-variant hover:bg-surface-variant/80 text-on-surface-variant font-semibold py-3 rounded-xl transition-colors cursor-pointer"
                 >
                   Ir a Axioma Stock
                 </button>
               )}
+
               <button 
                 onClick={() => {
-                    const coreUrl = import.meta.env.VITE_CORE_URL;
-                    window.location.href = `${coreUrl}/organization`;
+                  const coreUrl = import.meta.env.VITE_CORE_URL;
+                  window.location.href = `${coreUrl}/organization`;
                 }}
-                className="w-full bg-surface-variant hover:bg-surface-variant/80 text-on-surface-variant font-semibold py-3 rounded-xl transition-colors"
+                className="w-full bg-surface-variant hover:bg-surface-variant/80 text-on-surface-variant font-semibold py-3 rounded-xl transition-colors cursor-pointer"
               >
                 Gestionar mi cuenta Axioma
               </button>
+
               <button 
                 onClick={signOut}
-                className="w-full bg-transparent hover:bg-surface-variant text-outline font-semibold py-3 rounded-xl transition-colors"
+                className="w-full bg-transparent hover:bg-surface-variant/50 text-outline font-semibold py-2.5 rounded-xl transition-colors cursor-pointer text-sm"
               >
                 Cerrar sesión
               </button>

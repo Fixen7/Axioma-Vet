@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Activity } from 'lucide-react';
+import { CommercialBanner } from '../layout/CommercialBanner';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -20,5 +21,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to={`/login${location.search}`} replace />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <CommercialBanner />
+      {children}
+    </>
+  );
 }
