@@ -139,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const ticket = urlParams.get('ticket');
 
       if (ticket) {
+        setIsLoading(true);
         const codeVerifier = localStorage.getItem('axioma_pkce_verifier') || sessionStorage.getItem('pkce_verifier');
         if (codeVerifier) {
           try {
@@ -162,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               
               const { data } = await supabase.auth.getSession();
               if (data.session && isMounted) {
-                checkContextAndSetUser(data.session);
+                await checkContextAndSetUser(data.session);
               }
               return;
             }
@@ -188,6 +189,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      const hasTicket = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('ticket');
+      if (hasTicket && !session) return;
       if (isMounted) checkContextAndSetUser(session);
     });
 
