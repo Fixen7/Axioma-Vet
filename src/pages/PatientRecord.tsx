@@ -14,6 +14,9 @@ import { PrescriptionsTab } from '../components/patient/PrescriptionsTab';
 import { GroomingTab } from '../components/patient/GroomingTab';
 import { WeightHistoryModal } from '../components/patient/WeightHistoryModal';
 import { calculateAge } from '../utils/date';
+import { useEffect } from 'react';
+import { ClinicalMemoryCard } from '../components/patient/ClinicalMemoryCard';
+import { buildClinicalMemory, type ClinicalMemoryAnalysis } from '../utils/clinicalMemory';
 
 type Tab = 'activity' | 'history' | 'vaccines' | 'surgeries' | 'labs' | 'prescriptions' | 'grooming';
 
@@ -23,6 +26,7 @@ export default function PatientRecord() {
   const { patients, updatePatientStatus, deletePatient } = useVetContext();
   
   const [activeTab, setActiveTab] = useState<Tab>('activity');
+
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showWeightHistoryModal, setShowWeightHistoryModal] = useState(false);
@@ -33,6 +37,58 @@ export default function PatientRecord() {
   });
 
   const patient = patients.find(p => p.id === id);
+
+  const { getConsultations, getPrescriptions, getWeightRecords } = useVetContext();
+  const [clinicalMemory, setClinicalMemory] = useState<ClinicalMemoryAnalysis>({
+    weightDelta: null,
+    pendingControl: null,
+    lastTreatment: null,
+    importantObservations: []
+  });
+  const [isLoadingMemory, setIsLoadingMemory] = useState(true);
+
+  // Carga asíncrona segura con protección contra race conditions por cambio de paciente
+  useEffect(() => {
+    if (!id || !patient) return;
+
+    let isMounted = true;
+    setIsLoadingMemory(true);
+
+    // Limpiar memoria previa inmediatamente para no mezclar datos de pacientes
+    setClinicalMemory({
+      weightDelta: null,
+      pendingControl: null,
+      lastTreatment: null,
+      importantObservations: []
+    });
+
+    const loadMemoryData = async () => {
+      try {
+        const [consultationsData, prescriptionsData, weightsData] = await Promise.all([
+          getConsultations(id),
+          getPrescriptions(id),
+          getWeightRecords(id)
+        ]);
+
+        if (!isMounted) return;
+
+        const memory = buildClinicalMemory(patient, consultationsData, prescriptionsData, weightsData);
+        setClinicalMemory(memory);
+      } catch (err) {
+        console.error('Error al cargar memoria clínica del paciente:', err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingMemory(false);
+        }
+      }
+    };
+
+    loadMemoryData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id, patient?.id, patient?.weight, patient?.behaviorObservation]);
 
   if (!patient) {
     return (
@@ -234,6 +290,11 @@ export default function PatientRecord() {
             )}
           </div>
         </section>
+
+        {/* AXIOMA CLINICAL MEMORY - FASE 1 */}
+        <div className="w-full print:hidden -mt-2">
+          <ClinicalMemoryCard memory={clinicalMemory} isLoading={isLoadingMemory} />
+        </div>
 
         <nav className="flex flex-wrap gap-2 md:gap-4 pb-4 print:hidden w-full">
           {renderTabButton('activity', 'Actividad', Activity)}
