@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Activity, Scissors, Syringe, TestTube, FileText, Pill, Edit, Dog, Cat, Bird, HeartPulse, AlertTriangle, Trash2, TrendingUp, UserCheck, Sparkles } from 'lucide-react';
+import { Activity, Scissors, Syringe, TestTube, FileText, Pill, Edit, Dog, Cat, Bird, HeartPulse, AlertTriangle, Trash2, TrendingUp, UserCheck, Sparkles, SlidersHorizontal, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import { TopAppBar } from '../components/layout/TopAppBar';
 import { Button } from '../components/ui/Button';
 import { useVetContext } from '../context/VetContext';
@@ -15,6 +15,7 @@ import { GroomingTab } from '../components/patient/GroomingTab';
 import { WeightHistoryModal } from '../components/patient/WeightHistoryModal';
 import { TutorSummaryModal } from '../components/patient/TutorSummaryModal';
 import { SimilarCasesModal } from '../components/patient/SimilarCasesModal';
+import { AnatomicalBodyMap } from '../components/patient/AnatomicalBodyMap';
 import { calculateAge } from '../utils/date';
 import { ClinicalMemoryCard } from '../components/patient/ClinicalMemoryCard';
 import { buildClinicalMemory, type ClinicalMemoryAnalysis } from '../utils/clinicalMemory';
@@ -34,6 +35,7 @@ export default function PatientRecord() {
   const [showWeightHistoryModal, setShowWeightHistoryModal] = useState(false);
   const [showTutorSummaryModal, setShowTutorSummaryModal] = useState(false);
   const [showSimilarCasesModal, setShowSimilarCasesModal] = useState(false);
+  const [showExtraActions, setShowExtraActions] = useState(false);
   const [newWeight, setNewWeight] = useState('');
   const [memoryVersion, setMemoryVersion] = useState(0);
 
@@ -102,7 +104,7 @@ export default function PatientRecord() {
 
   if (!patient) {
     return (
-      <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-on-background flex flex-col items-center justify-center p-4">
         <h2 className="font-headline-lg mb-4">Paciente no encontrado</h2>
         <Button onClick={() => navigate('/patient/search')}>Volver a la búsqueda</Button>
       </div>
@@ -166,10 +168,10 @@ export default function PatientRecord() {
   };
 
   const getStatusDisplay = () => {
-    if (patient.status === 'PRECAUTION') return { label: 'PRECAUCIÓN', color: 'text-yellow-600', bg: 'bg-yellow-100', border: 'border-yellow-200' };
-    if (patient.status === 'HIGH_RISK') return { label: 'ALTO RIESGO', color: 'text-red-600', bg: 'bg-red-100', border: 'border-red-200' };
+    if (patient.status === 'PRECAUTION') return { label: 'PRECAUCIÓN', color: 'text-amber-800 dark:text-amber-300', bg: 'bg-amber-100 dark:bg-amber-950/40', border: 'border-amber-300 dark:border-amber-800' };
+    if (patient.status === 'HIGH_RISK') return { label: 'ALTO RIESGO', color: 'text-red-800 dark:text-red-300', bg: 'bg-red-100 dark:bg-red-950/40', border: 'border-red-300 dark:border-red-800' };
     if (patient.status === 'DECEASED') return { label: 'FALLECIDO', color: 'text-outline', bg: 'bg-surface-variant', border: 'border-outline-variant' };
-    return { label: 'AL DÍA', color: 'text-emerald-600', bg: 'bg-emerald-100', border: 'border-emerald-200' };
+    return { label: 'AL DÍA', color: 'text-emerald-800 dark:text-emerald-300', bg: 'bg-emerald-100 dark:bg-emerald-950/40', border: 'border-emerald-300 dark:border-emerald-800' };
   };
 
   const statusInfo = getStatusDisplay();
@@ -177,29 +179,34 @@ export default function PatientRecord() {
   const renderTabButton = (tab: Tab, label: string, Icon: any) => (
     <button
       onClick={() => setActiveTab(tab)}
-      className={`flex items-center gap-2 px-5 py-3 rounded-full font-label-lg transition-all duration-300 relative ${
+      className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-xs md:text-sm transition-all duration-300 relative ${
         activeTab === tab
-          ? 'bg-primary-container text-primary font-bold shadow-sm'
-          : 'bg-surface-variant text-outline hover:bg-surface-container-high hover:text-on-surface'
+          ? 'bg-primary text-on-primary font-bold shadow-md shadow-primary/20 scale-[1.02]'
+          : 'bg-surface-container-lowest/80 text-on-surface-variant hover:bg-surface-container hover:text-on-surface border border-outline-variant/40'
       }`}
     >
       <Icon className="w-4 h-4" />
       <span>{label}</span>
       {activeTab === tab && (
-        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
+        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white" />
       )}
     </button>
   );
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col print:bg-white print:min-h-0">
+    <div className="bg-background text-on-background min-h-screen flex flex-col antialiased relative overflow-x-hidden print:bg-white print:min-h-0">
+      
+      {/* Luces difusas / Mesh glowing orbs idénticos a Home.tsx */}
+      <div className="absolute top-[-5%] left-[-5%] w-[45vw] h-[45vw] bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute top-[25%] right-[-5%] w-[35vw] h-[35vw] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+
       <TopAppBar title={patient.name} subtitle={patient.species} />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-stack-padding flex flex-col gap-6 print:p-0 print:max-w-none">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col gap-5 print:p-0 print:max-w-none">
         
         {/* Banner de Fallecido */}
         {isDeceased && (
-          <div className="w-full bg-surface-container-high border border-outline-variant p-4 rounded-2xl flex items-center gap-3 text-outline print:hidden">
+          <div className="w-full bg-surface-container-high/80 border border-outline-variant p-4 rounded-2xl flex items-center gap-3 text-outline print:hidden">
             <AlertTriangle className="w-6 h-6 text-outline" />
             <div>
               <h4 className="font-headline-sm m-0 text-on-surface">Paciente Fallecido</h4>
@@ -210,127 +217,211 @@ export default function PatientRecord() {
           </div>
         )}
 
-        {/* Profile Card */}
-        <section className={`level-1-surface rounded-[24px] p-6 md:p-stack-padding flex flex-col md:flex-row gap-8 items-start relative overflow-hidden group print:hidden ${isDeceased ? 'opacity-90' : ''}`}>
-          {!isDeceased && (
-            <div className="absolute -top-32 -right-32 w-64 h-64 bg-primary-container opacity-[0.1] rounded-full blur-[80px] group-hover:opacity-[0.15] transition-opacity duration-700"></div>
-          )}
+        {/* ========================================================
+            BENTO CARD 1: PERFIL PRINCIPAL Y ESTADO CLÍNICO
+            ======================================================== */}
+        <section className={`group relative overflow-hidden rounded-[32px] bg-surface-container-lowest/85 backdrop-blur-xl border border-surface-container-high p-6 md:p-8 shadow-sm flex flex-col gap-6 print:hidden ${isDeceased ? 'opacity-90' : ''}`}>
           
-          <div className="relative w-24 h-24 md:w-32 md:h-32 shrink-0">
-            <div className="w-full h-full rounded-2xl border-2 border-surface-container-high shadow-lg bg-surface-variant flex items-center justify-center text-outline">
-              {getSpeciesIcon(patient.species)}
-            </div>
-            {!isDeceased && (
-              <div className="absolute -bottom-2 -right-2 bg-surface p-1 rounded-full border border-surface-container-high">
-                <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                </div>
-              </div>
-            )}
+          {/* Marca de agua sutil en esquina igual a Home.tsx */}
+          <div className="absolute right-[-2%] bottom-[-15%] opacity-5 group-hover:opacity-10 group-hover:scale-105 transition-all duration-700 pointer-events-none text-primary">
+            {getSpeciesIcon(patient.species)}
           </div>
 
-          <div className="flex flex-col gap-4 flex-grow z-10 w-full">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          {/* Fila Superior: Identidad + Barra Retráctil de Acciones */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="relative w-16 h-16 md:w-20 md:h-20 shrink-0">
+                <div className="w-full h-full rounded-2xl bg-surface-container flex items-center justify-center text-primary shadow-sm border border-surface-container-high">
+                  {getSpeciesIcon(patient.species)}
+                </div>
+                {!isDeceased && (
+                  <div className="absolute -bottom-1 -right-1 bg-surface-container-lowest p-1 rounded-full border border-surface-container-high shadow-xs">
+                    <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                  </div>
+                )}
+              </div>
+
               <div>
-                <h2 className="font-display text-4xl text-on-surface m-0">{patient.name}</h2>
-                <p className="font-body-lg text-on-surface-variant m-0">{patient.breed || 'Sin raza registrada'}</p>
-              </div>
-              <div className="flex gap-2 flex-wrap items-center">
-                <button 
-                  onClick={handleOpenStatusModal}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border font-label-caps text-label-caps tracking-widest uppercase hover:opacity-80 transition-opacity cursor-pointer ${statusInfo.bg} ${statusInfo.color} ${statusInfo.border}`}
-                  title={patient.behaviorObservation || 'Clic para cambiar estado'}
-                >
-                  <Activity className="w-4 h-4" />
-                  {statusInfo.label}
-                  <Edit className="w-3 h-3 ml-1 opacity-50" />
-                </button>
-                <div className="flex bg-surface-container rounded-xl border border-outline-variant overflow-hidden shadow-sm hover:shadow transition-shadow">
-                  <button 
-                    onClick={() => { setNewWeight(patient.weight || ''); setShowWeightModal(true); }}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 text-on-surface font-label-caps text-label-caps tracking-widest uppercase hover:bg-surface-container-high transition-colors cursor-pointer"
-                    title="Editar Peso"
-                  >
-                    {patient.weight ? (patient.weight.toLowerCase().includes('kg') ? patient.weight : `${patient.weight} kg`) : 'SIN PESO'}
-                    <Edit className="w-3 h-3 ml-1 opacity-50" />
-                  </button>
-                  <button 
-                    onClick={() => setShowWeightHistoryModal(true)}
-                    className="inline-flex items-center justify-center px-3 py-2 border-l border-outline-variant hover:bg-surface-container-high transition-colors text-primary bg-surface-container-low"
-                    title="Ver, editar o eliminar historial de peso"
-                  >
-                    <TrendingUp className="w-4 h-4" />
-                  </button>
-                </div>
+                <h1 className="font-display text-3xl md:text-4xl text-on-surface m-0 font-bold tracking-tight">
+                  {patient.name}
+                </h1>
+                <p className="text-sm md:text-base text-on-surface-variant m-0 font-medium capitalize mt-0.5">
+                  {patient.species} {patient.breed ? `· ${patient.breed}` : '· Sin raza registrada'}
+                </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-2 mb-4 bg-surface-container-lowest p-4 rounded-xl border border-surface-container-high">
-              <div className="flex flex-col">
-                <span className="font-label-sm text-outline uppercase tracking-wider">Tutor</span>
-                <span className="font-body-md text-on-surface">{patient.ownerName}</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-label-sm text-outline uppercase tracking-wider">Contacto</span>
-                <span className="font-body-md text-on-surface">{patient.ownerPhone}</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-label-sm text-outline uppercase tracking-wider">Edad</span>
-                <span className="font-body-md text-on-surface">{calculateAge(patient.birthDate)}</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-label-sm text-outline uppercase tracking-wider">Especie</span>
-                <span className="font-body-md text-on-surface capitalize">{patient.species}</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-label-sm text-outline uppercase tracking-wider">Esterilizado</span>
-                <span className="font-body-md text-on-surface">{patient.isSterilized ? 'Sí' : 'No'}</span>
-              </div>
-            </div>
-
+            {/* Barra Retráctil Minimalista: Menos es más */}
             {!isDeceased && (
-              <div className="flex gap-3 flex-wrap print:hidden">
-                <Button variant="outline" onClick={() => navigate(`/patient/edit/${patient.id}`)}>
-                  <Edit className="w-4 h-4 mr-1.5" />
-                  Editar Perfil
-                </Button>
-                <Button 
-                  variant="outline" 
+              <div className="flex items-center gap-2 self-end md:self-center">
+                {/* Botón Principal siempre a mano */}
+                <button
+                  type="button"
                   onClick={() => setShowTutorSummaryModal(true)}
-                  className="border-primary/40 text-primary hover:bg-primary/5"
-                  title="Generar resumen de atención claro para el propietario"
+                  className="px-3.5 py-2 rounded-xl bg-primary text-on-primary font-medium text-xs hover:opacity-90 shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="Generar resumen claro para el propietario"
                 >
-                  <UserCheck className="w-4 h-4 mr-1.5" />
-                  Resumen Tutor
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowSimilarCasesModal(true)}
-                  className="border-outline-variant hover:bg-surface-container"
-                  title="Consultar casos similares registrados en la clínica"
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Resumen Tutor</span>
+                </button>
+
+                {/* Botón conmutador retráctil de opciones */}
+                <button
+                  type="button"
+                  onClick={() => setShowExtraActions(prev => !prev)}
+                  className={`px-3 py-2 rounded-xl border text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                    showExtraActions 
+                      ? 'bg-surface-container-high border-outline-variant text-on-surface' 
+                      : 'bg-surface-container-low hover:bg-surface-container border-outline-variant/50 text-on-surface-variant'
+                  }`}
+                  aria-label="Más opciones"
                 >
-                  <Sparkles className="w-4 h-4 mr-1.5 text-primary" />
-                  Casos Similares
-                </Button>
-                <Button variant="ghost" onClick={handleDeletePatient} className="text-red-500 hover:bg-red-50 hover:text-red-600 border border-red-200">
-                  <Trash2 className="w-4 h-4 mr-1.5" />
-                  Eliminar Paciente
-                </Button>
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-outline" />
+                  <span>{showExtraActions ? 'Menos' : 'Acciones'}</span>
+                  {showExtraActions ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
               </div>
             )}
           </div>
+
+          {/* Menú Retráctil Desplegable (se muestra solo cuando el doctor lo requiere) */}
+          {showExtraActions && !isDeceased && (
+            <div className="relative z-10 pt-2 border-t border-surface-container-high flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate(`/patient/edit/${patient.id}`)}
+                className="h-9 px-3 text-xs rounded-xl"
+              >
+                <Edit className="w-3.5 h-3.5 mr-1.5" />
+                Editar Perfil
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowSimilarCasesModal(true)}
+                className="h-9 px-3 text-xs rounded-xl border-primary/30 text-primary hover:bg-primary/5"
+              >
+                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                Casos Similares en la Clínica
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={handleDeletePatient} 
+                className="h-9 px-3 text-xs rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 border border-red-200/80"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                Eliminar Paciente
+              </Button>
+            </div>
+          )}
+
+          {/* Fila de Datos Vitales en Compartimentos Bento */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 relative z-10">
+            <div className="bg-surface-container-low/70 p-3 rounded-2xl border border-outline-variant/30 flex flex-col justify-between">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-outline">Tutor</span>
+              <span className="text-xs md:text-sm font-semibold text-on-surface truncate mt-1">
+                {patient.ownerName || 'Sin registrar'}
+              </span>
+            </div>
+            <div className="bg-surface-container-low/70 p-3 rounded-2xl border border-outline-variant/30 flex flex-col justify-between">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-outline">Contacto</span>
+              <span className="text-xs md:text-sm font-semibold text-on-surface truncate mt-1">
+                {patient.ownerPhone || 'Sin registrar'}
+              </span>
+            </div>
+            <div className="bg-surface-container-low/70 p-3 rounded-2xl border border-outline-variant/30 flex flex-col justify-between">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-outline">Edad</span>
+              <span className="text-xs md:text-sm font-semibold text-on-surface truncate mt-1">
+                {calculateAge(patient.birthDate)}
+              </span>
+            </div>
+            <div className="bg-surface-container-low/70 p-3 rounded-2xl border border-outline-variant/30 flex flex-col justify-between">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-outline">Especie</span>
+              <span className="text-xs md:text-sm font-semibold text-on-surface truncate capitalize mt-1">
+                {patient.species}
+              </span>
+            </div>
+            <div className="bg-surface-container-low/70 p-3 rounded-2xl border border-outline-variant/30 flex flex-col justify-between">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-outline">Esterilizado</span>
+              <span className="text-xs md:text-sm font-semibold text-on-surface truncate mt-1">
+                {patient.isSterilized ? 'Sí' : 'No'}
+              </span>
+            </div>
+          </div>
+
+          {/* Fila de Insignias Interactivas (Estado, Peso & Observaciones) */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-surface-container-high/60 relative z-10">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Badge de Estado Clínico (Clickable) */}
+              <button 
+                onClick={handleOpenStatusModal}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold uppercase tracking-wider hover:opacity-85 transition-opacity cursor-pointer shadow-2xs ${statusInfo.bg} ${statusInfo.color} ${statusInfo.border}`}
+                title={patient.behaviorObservation || 'Clic para cambiar estado clínico'}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                {statusInfo.label}
+                <Edit className="w-3 h-3 ml-0.5 opacity-50" />
+              </button>
+
+              {/* Botón de Peso & Gráfica (Clickable) */}
+              <div className="flex bg-surface-container-low/80 rounded-xl border border-outline-variant/50 overflow-hidden shadow-2xs">
+                <button 
+                  onClick={() => { setNewWeight(patient.weight || ''); setShowWeightModal(true); }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-on-surface font-semibold text-xs hover:bg-surface-container transition-colors cursor-pointer"
+                  title="Editar peso actual"
+                >
+                  <span className="text-[11px] text-outline uppercase font-bold">Peso:</span>
+                  <span>{patient.weight ? (patient.weight.toLowerCase().includes('kg') ? patient.weight : `${patient.weight} kg`) : 'Sin peso'}</span>
+                  <Edit className="w-3 h-3 ml-0.5 opacity-40" />
+                </button>
+                <button 
+                  onClick={() => setShowWeightHistoryModal(true)}
+                  className="inline-flex items-center justify-center px-2.5 py-1.5 border-l border-outline-variant/50 hover:bg-surface-container transition-colors text-primary bg-primary/5"
+                  title="Ver, editar o eliminar historial completo de peso"
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Observación de Manejo / Alerta si existe */}
+            {patient.behaviorObservation && (
+              <div className="text-xs text-on-surface-variant bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20 flex items-center gap-1.5 font-medium">
+                <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span className="truncate max-w-xs md:max-w-md">{patient.behaviorObservation}</span>
+              </div>
+            )}
+          </div>
+
         </section>
 
-        {/* AXIOMA CLINICAL MEMORY - FASE 1 & FASE 2 */}
-        <div className="w-full print:hidden -mt-2">
-          <ClinicalMemoryCard 
-            memory={clinicalMemory} 
-            isLoading={isLoadingMemory} 
-            onOpenSimilarCases={() => setShowSimilarCasesModal(true)}
-          />
+        {/* ========================================================
+            BENTO CARD 2: MAPA ANATÓMICO Y MEMORIA CLÍNICA INTEGRADA
+            ======================================================== */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 print:hidden">
+          
+          {/* Mapa Anatómico de Dolencias (7 Columnas en Desktop) */}
+          <div className="lg:col-span-7 flex flex-col">
+            <AnatomicalBodyMap 
+              patient={patient} 
+              consultations={cachedConsultations} 
+            />
+          </div>
+
+          {/* Memoria Clínica Determinista (5 Columnas en Desktop) */}
+          <div className="lg:col-span-5 flex flex-col">
+            <ClinicalMemoryCard 
+              memory={clinicalMemory} 
+              isLoading={isLoadingMemory} 
+              onOpenSimilarCases={() => setShowSimilarCasesModal(true)}
+            />
+          </div>
+
         </div>
 
-        <nav className="flex flex-wrap gap-2 md:gap-4 pb-4 print:hidden w-full">
+        {/* ========================================================
+            BENTO CARD 3: NAVEGACIÓN Y CONTENIDO DE PESTAÑAS CLÍNICAS
+            ======================================================== */}
+        <nav className="flex flex-wrap gap-2 py-1 print:hidden w-full overflow-x-auto">
           {renderTabButton('activity', 'Actividad', Activity)}
           {renderTabButton('history', 'Historia Clínica', FileText)}
           {renderTabButton('vaccines', 'Vacunas', Syringe)}
@@ -340,7 +431,7 @@ export default function PatientRecord() {
           {renderTabButton('grooming', 'Peluquería', Scissors)}
         </nav>
 
-        <section className="level-1-surface rounded-[24px] p-6 md:p-stack-padding min-h-[400px] print:p-0 print:border-none print:shadow-none print:bg-white print:w-full">
+        <section className="rounded-[32px] bg-surface-container-lowest/85 backdrop-blur-xl border border-surface-container-high p-6 md:p-8 min-h-[420px] shadow-sm print:p-0 print:border-none print:shadow-none print:bg-white print:w-full">
           {activeTab === 'activity' && (
              <ActivityTimeline patientId={patient.id} />
           )}
@@ -368,75 +459,75 @@ export default function PatientRecord() {
       {/* Modales */}
       {showStatusModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 print:hidden">
-          <div className="bg-surface-container rounded-[24px] p-6 md:p-8 w-full max-w-md shadow-2xl flex flex-col gap-6 animate-in fade-in zoom-in duration-300">
+          <div className="bg-surface-container-lowest text-on-surface rounded-[28px] p-6 md:p-8 w-full max-w-md shadow-2xl flex flex-col gap-5 border border-outline-variant/40 animate-in fade-in zoom-in duration-300">
             <div>
-              <h2 className="font-display text-2xl text-on-surface mb-2">Estado del Paciente</h2>
-              <p className="font-body-md text-on-surface-variant">
-                Actualiza el estado clínico y agrega notas sobre el comportamiento o precauciones.
+              <h2 className="font-display text-2xl text-on-surface mb-1 font-bold">Estado del Paciente</h2>
+              <p className="text-xs text-on-surface-variant m-0">
+                Actualiza el estado de manejo y precauciones para este paciente.
               </p>
             </div>
 
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="font-label-md text-on-surface-variant">Estado Clínico</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-outline">Estado Clínico</label>
                 <select 
                   value={statusForm.status}
                   onChange={(e) => setStatusForm({ ...statusForm, status: e.target.value })}
-                  className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none"
+                  className="w-full h-11 px-3 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none text-sm text-on-surface font-medium"
                 >
-                  <option value="NORMAL">Al Día / Normal</option>
-                  <option value="PRECAUTION">Precaución</option>
-                  <option value="HIGH_RISK">Alto Riesgo</option>
-                  <option value="DECEASED">Fallecido</option>
+                  <option value="NORMAL">Al Día / Normal (Verde)</option>
+                  <option value="PRECAUTION">Precaución (Amarillo)</option>
+                  <option value="HIGH_RISK">Alto Riesgo (Rojo)</option>
+                  <option value="DECEASED">Fallecido (Gris)</option>
                 </select>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <label className="font-label-md text-on-surface-variant">Observaciones de Manejo</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-outline">Observaciones de Manejo</label>
                 <textarea 
                   value={statusForm.behaviorObservation}
                   onChange={(e) => setStatusForm({ ...statusForm, behaviorObservation: e.target.value })}
                   placeholder="Ej. Agresivo al tacto, alergia severa..."
                   rows={3}
-                  className="w-full p-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none resize-none"
+                  className="w-full p-3 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none resize-none text-sm text-on-surface"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-4 mt-2">
-              <Button variant="ghost" onClick={() => setShowStatusModal(false)}>Cancelar</Button>
-              <Button variant="primary" onClick={handleSaveStatus}>Actualizar Estado</Button>
+            <div className="flex justify-end gap-3 pt-2 border-t border-surface-container-high">
+              <Button variant="ghost" onClick={() => setShowStatusModal(false)} className="text-xs">Cancelar</Button>
+              <Button variant="primary" onClick={handleSaveStatus} className="text-xs font-semibold">Actualizar Estado</Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Weight Modal */}
+      {/* Modal de Peso */}
       {showWeightModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 print:hidden">
-          <div className="bg-surface-container rounded-[24px] p-6 md:p-8 w-full max-w-sm shadow-2xl flex flex-col gap-6 animate-in fade-in zoom-in duration-300">
+          <div className="bg-surface-container-lowest text-on-surface rounded-[28px] p-6 md:p-8 w-full max-w-sm shadow-2xl flex flex-col gap-5 border border-outline-variant/40 animate-in fade-in zoom-in duration-300">
             <div>
-              <h2 className="font-display text-2xl text-on-surface mb-2">Actualizar Peso</h2>
-              <p className="font-body-md text-on-surface-variant">
-                Ingresa el nuevo peso del paciente.
+              <h2 className="font-display text-2xl text-on-surface mb-1 font-bold">Actualizar Peso</h2>
+              <p className="text-xs text-on-surface-variant m-0">
+                Ingresa la nueva medición de peso del paciente.
               </p>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="font-label-md text-on-surface-variant">Peso (kg)</label>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-outline">Peso (kg)</label>
               <input 
                 type="text" 
                 value={newWeight}
                 onChange={(e) => setNewWeight(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none"
+                className="w-full h-11 px-3 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none text-sm font-semibold text-on-surface"
                 placeholder="Ej. 12.5"
                 autoFocus
               />
             </div>
 
-            <div className="flex justify-end gap-4 mt-2">
-              <Button variant="ghost" onClick={() => setShowWeightModal(false)}>Cancelar</Button>
-              <Button variant="primary" onClick={handleSaveWeight}>Guardar Peso</Button>
+            <div className="flex justify-end gap-3 pt-2 border-t border-surface-container-high">
+              <Button variant="ghost" onClick={() => setShowWeightModal(false)} className="text-xs">Cancelar</Button>
+              <Button variant="primary" onClick={handleSaveWeight} className="text-xs font-semibold">Guardar Peso</Button>
             </div>
           </div>
         </div>
