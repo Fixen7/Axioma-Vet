@@ -1,17 +1,30 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, FileText, Calendar, Trash2, Edit, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { PlusCircle, FileText, Calendar, Trash2, Edit, ChevronDown, ChevronUp, Sparkles, MapPin } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useVetContext } from '../../context/VetContext';
 import type { Consultation } from '../../services/types';
 import { formatLocalDate } from '../../utils/date';
+import { AnatomyMarkerEditor, type DraftAnatomyPoint } from './AnatomyMarkerEditor';
+import { 
+  syncPointsForSource, 
+  removePointsForSource, 
+  getPointsBySource,
+  QUADRANT_LABELS 
+} from '../../utils/customAnatomyPoints';
 
 export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: string, isDeceased: boolean }) {
-  const { getConsultations, saveConsultation, deleteConsultation } = useVetContext();
+  const { getConsultations, saveConsultation, deleteConsultation, patients } = useVetContext();
+  const patient = patients.find(p => p.id === patientId);
+
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Puntos anatómicos asociados a la consulta actual
+  const [draftAnatomyPoints, setDraftAnatomyPoints] = useState<DraftAnatomyPoint[]>([]);
+  const [showAnatomySection, setShowAnatomySection] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -48,15 +61,29 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
       return;
     }
 
-    await saveConsultation({
+    const saved = await saveConsultation({
       id: editId || undefined,
       patientId,
       ...formData,
       nextControl: formData.nextControl || undefined
     });
 
+    // Sincronizar marcas anatómicas vinculadas a esta consulta
+    if (saved && saved.id) {
+      syncPointsForSource(
+        patientId,
+        'consultation',
+        saved.id,
+        `Consulta: ${saved.reason} (${saved.diagnosis.slice(0, 30)})`,
+        saved.createdAt,
+        draftAnatomyPoints
+      );
+    }
+
     setIsAdding(false);
     setEditId(null);
+    setDraftAnatomyPoints([]);
+    setShowAnatomySection(false);
     setFormData({
       reason: 'Consulta',
       observation: '',
@@ -76,6 +103,12 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
       nextControl: consultation.nextControl || ''
     });
     setEditId(consultation.id);
+
+    // Cargar puntos anatómicos existentes de esta consulta
+    const existingPoints = getPointsBySource(patientId, consultation.id);
+    setDraftAnatomyPoints(existingPoints);
+    setShowAnatomySection(existingPoints.length > 0);
+
     setIsAdding(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -83,6 +116,8 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
   const handleCancel = () => {
     setIsAdding(false);
     setEditId(null);
+    setDraftAnatomyPoints([]);
+    setShowAnatomySection(false);
     setFormData({
       reason: 'Consulta',
       observation: '',
@@ -97,6 +132,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
     if (window.confirm("¿Seguro que quieres eliminar esta consulta? Esta acción no se puede deshacer.")) {
       try {
         await deleteConsultation(id);
+        removePointsForSource(patientId, id);
         loadConsultations();
       } catch (error: any) {
         alert("Error al eliminar: " + error.message);
@@ -124,7 +160,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
       <div className="flex justify-between items-center bg-surface sticky top-0 z-10 py-2 border-b border-surface-variant md:border-none md:static md:bg-transparent">
         <h3 className="font-headline-lg m-0 text-on-surface">Historia Clínica</h3>
         {!isDeceased && !isAdding && (
-          <Button variant="primary" onClick={() => { setEditId(null); setIsAdding(true); }} className="shadow-sm">
+          <Button variant="primary" onClick={() => { setEditId(null); setDraftAnatomyPoints([]); setShowAnatomySection(false); setIsAdding(true); }} className="shadow-sm">
             <PlusCircle className="w-5 h-5 mr-1" /> Nueva Consulta
           </Button>
         )}
@@ -208,6 +244,33 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
             />
           </div>
 
+          {/* ESQUEMA ANATÓMICO VINCULADO A ESTA CONSULTA */}
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => setShowAnatomySection(prev => !prev)}
+              className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-primary/30 bg-primary/5 text-primary text-xs font-semibold hover:bg-primary/10 transition-colors cursor-pointer"
+            >
+              <span className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span>Marcar Cuadrantes Anatómicos en esta Consulta ({draftAnatomyPoints.length} marcados)</span>
+              </span>
+              <span className="text-[11px] underline">
+                {showAnatomySection ? 'Ocultar silueta' : 'Abrir silueta anatómica ▾'}
+              </span>
+            </button>
+
+            {showAnatomySection && (
+              <AnatomyMarkerEditor
+                initialSpecies={patient?.species || ''}
+                points={draftAnatomyPoints}
+                onChange={setDraftAnatomyPoints}
+                title="Zonas Anatómicas Afectadas en esta Consulta"
+                hint="Haz clic en la silueta para fijar la zona afectada e indicar su cuadrante"
+              />
+            )}
+          </div>
+
           <div className="flex flex-col gap-1.5">
             <label className="font-label-sm uppercase tracking-wider text-outline">Diagnóstico *</label>
             <textarea 
@@ -250,6 +313,8 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
         <div className="flex flex-col gap-3">
           {consultations.map(consultation => {
             const isExpanded = expandedId === consultation.id;
+            const consultationPoints = getPointsBySource(patientId, consultation.id);
+
             return (
               <article 
                 key={consultation.id} 
@@ -268,6 +333,11 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
                       <Calendar className="w-4 h-4 opacity-70" /> 
                       <span className="font-medium text-on-surface">{formatLocalDate(consultation.createdAt, true)}</span>
                     </span>
+                    {consultationPoints.length > 0 && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                        <MapPin className="w-3 h-3" /> {consultationPoints.length} {consultationPoints.length === 1 ? 'cuadrante' : 'cuadrantes'}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between w-full sm:w-auto gap-4">
@@ -292,16 +362,35 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
 
                 {/* Contenido Expandible */}
                 {isExpanded && (
-                  <div className="px-4 md:px-5 pb-5 pt-2 border-t border-surface-variant bg-surface-container-lowest animate-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 md:px-5 pb-5 pt-2 border-t border-surface-variant bg-surface-container-lowest animate-in slide-in-from-top-2 duration-200 flex flex-col gap-4">
                     
                     {consultation.nextControl && (
-                      <div className="md:hidden mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 px-2.5 py-1.5 rounded-md border border-primary/20">
+                      <div className="md:hidden inline-flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 px-2.5 py-1.5 rounded-md border border-primary/20 self-start">
                         <Calendar className="w-3.5 h-3.5" /> Próximo Control: {formatLocalDate(consultation.nextControl)}
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
-                      <div className="flex flex-col gap-2">
+                    {/* Puntos Anatómicos Marcados en esta Consulta */}
+                    {consultationPoints.length > 0 && (
+                      <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 flex flex-col gap-2">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-primary flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5" />
+                          Cuadrantes y Hallazgos Anatómicos ({consultationPoints.length})
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {consultationPoints.map((pt, i) => (
+                            <div key={i} className="text-xs px-2.5 py-1 rounded-lg bg-surface-container-lowest border border-outline-variant/40 flex items-center gap-1.5 shadow-2xs">
+                              <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                              <span className="font-bold text-on-surface">{pt.label}</span>
+                              <span className="text-primary text-[10px] font-medium">({QUADRANT_LABELS[pt.quadrant]})</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1.5">
                         <h5 className="font-label-sm uppercase tracking-wider text-outline m-0 flex items-center gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span> Observaciones
                         </h5>
@@ -309,7 +398,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
                           {consultation.observation}
                         </p>
                       </div>
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-1.5">
                         <h5 className="font-label-sm uppercase tracking-wider text-outline m-0 flex items-center gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span> Diagnóstico
                         </h5>
@@ -319,7 +408,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
                       </div>
                     </div>
                     
-                    <div className="flex flex-col gap-2 mt-6">
+                    <div className="flex flex-col gap-1.5">
                       <h5 className="font-label-sm uppercase tracking-wider text-outline m-0 flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Tratamiento
                       </h5>
@@ -328,7 +417,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
                       </p>
                     </div>
 
-                    <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-surface-variant">
+                    <div className="flex justify-end gap-2 pt-3 border-t border-surface-variant">
                       <Button 
                         variant="ghost" 
                         onClick={(e) => { e.stopPropagation(); handleEdit(consultation); }}

@@ -1,16 +1,29 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Scissors, Calendar, User, Activity, Trash2, Edit } from 'lucide-react';
+import { PlusCircle, Scissors, Calendar, User, Activity, Trash2, Edit, MapPin } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useVetContext } from '../../context/VetContext';
 import type { Surgery } from '../../services/types';
 import { getLocalDatetimeString, formatLocalDate, toUTCDateTime } from '../../utils/date';
+import { AnatomyMarkerEditor, type DraftAnatomyPoint } from './AnatomyMarkerEditor';
+import { 
+  syncPointsForSource, 
+  removePointsForSource, 
+  getPointsBySource,
+  QUADRANT_LABELS 
+} from '../../utils/customAnatomyPoints';
 
 export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isDeceased: boolean }) {
-  const { getSurgeries, saveSurgery, deleteSurgery, settings } = useVetContext();
+  const { getSurgeries, saveSurgery, deleteSurgery, settings, patients } = useVetContext();
+  const patient = patients.find(p => p.id === patientId);
+
   const [surgeries, setSurgeries] = useState<Surgery[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Puntos anatómicos asociados a la cirugía
+  const [draftAnatomyPoints, setDraftAnatomyPoints] = useState<DraftAnatomyPoint[]>([]);
+  const [showAnatomySection, setShowAnatomySection] = useState(false);
 
   const [formData, setFormData] = useState({
     procedure: '',
@@ -45,7 +58,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
       return;
     }
 
-    await saveSurgery({
+    const saved = await saveSurgery({
       id: editId || undefined,
       patientId,
       ...formData,
@@ -53,8 +66,21 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
       nextControl: formData.nextControl || undefined
     });
 
+    if (saved && saved.id) {
+      syncPointsForSource(
+        patientId,
+        'surgery',
+        saved.id,
+        `Cirugía: ${saved.procedure}`,
+        saved.date,
+        draftAnatomyPoints
+      );
+    }
+
     setIsAdding(false);
     setEditId(null);
+    setDraftAnatomyPoints([]);
+    setShowAnatomySection(false);
     setFormData({
       procedure: '',
       date: getLocalDatetimeString(),
@@ -67,6 +93,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
     });
     loadSurgeries();
   };
+
   const handleEdit = (surgery: Surgery) => {
     setFormData({
       procedure: surgery.procedure,
@@ -79,6 +106,11 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
       nextControl: surgery.nextControl || ''
     });
     setEditId(surgery.id);
+
+    const existingPoints = getPointsBySource(patientId, surgery.id);
+    setDraftAnatomyPoints(existingPoints);
+    setShowAnatomySection(existingPoints.length > 0);
+
     setIsAdding(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -86,6 +118,8 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
   const handleCancel = () => {
     setIsAdding(false);
     setEditId(null);
+    setDraftAnatomyPoints([]);
+    setShowAnatomySection(false);
     setFormData({
       procedure: '',
       date: getLocalDatetimeString(),
@@ -102,6 +136,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
     if (window.confirm("¿Seguro que quieres eliminar este registro quirúrgico? Esta acción no se puede deshacer.")) {
       try {
         await deleteSurgery(id);
+        removePointsForSource(patientId, id);
         loadSurgeries();
       } catch (error: any) {
         alert("Error al eliminar: " + error.message);
@@ -116,7 +151,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
       <div className="flex justify-between items-center">
         <h3 className="font-headline-lg m-0">Historial de Cirugías</h3>
         {!isDeceased && !isAdding && (
-          <Button variant="primary" onClick={() => { setEditId(null); setIsAdding(true); }}>
+          <Button variant="primary" onClick={() => { setEditId(null); setDraftAnatomyPoints([]); setShowAnatomySection(false); setIsAdding(true); }}>
             <PlusCircle className="w-5 h-5" /> Nueva Cirugía
           </Button>
         )}
@@ -198,6 +233,33 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
             />
           </div>
 
+          {/* ESQUEMA ANATÓMICO VINCULADO A ESTA CIRUGÍA */}
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => setShowAnatomySection(prev => !prev)}
+              className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-primary/30 bg-primary/5 text-primary text-xs font-semibold hover:bg-primary/10 transition-colors cursor-pointer"
+            >
+              <span className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span>Marcar Cuadrantes / Zonas Quirúrgicas ({draftAnatomyPoints.length} marcados)</span>
+              </span>
+              <span className="text-[11px] underline">
+                {showAnatomySection ? 'Ocultar silueta' : 'Abrir silueta anatómica ▾'}
+              </span>
+            </button>
+
+            {showAnatomySection && (
+              <AnatomyMarkerEditor
+                initialSpecies={patient?.species || ''}
+                points={draftAnatomyPoints}
+                onChange={setDraftAnatomyPoints}
+                title="Zonas Anatómicas / Incisiones de la Cirugía"
+                hint="Haz clic en la silueta para fijar la zona intervenida e indicar su cuadrante"
+              />
+            )}
+          </div>
+
           <div className="flex flex-col gap-2">
             <label className="font-label-md text-on-surface-variant">Resultado / Evolución *</label>
             <textarea 
@@ -236,64 +298,90 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {surgeries.map(surgery => (
-            <article key={surgery.id} className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 flex flex-col gap-4 hover:border-primary/30 transition-colors">
-              <div className="flex justify-between items-start border-b border-surface-variant pb-4 mb-4">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-label-caps tracking-widest text-primary uppercase">{surgery.procedure}</span>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => handleEdit(surgery)} className="text-on-surface-variant hover:text-primary p-1 rounded-full hover:bg-primary-container/20 transition-colors" title="Editar registro">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDelete(surgery.id)} className="text-red-400 hover:text-red-600 p-1 rounded-full hover:bg-red-50 transition-colors" title="Eliminar registro">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+          {surgeries.map(surgery => {
+            const surgeryPoints = getPointsBySource(patientId, surgery.id);
+            return (
+              <article key={surgery.id} className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 flex flex-col gap-4 hover:border-primary/30 transition-colors">
+                <div className="flex justify-between items-start border-b border-surface-variant pb-4 mb-4">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-label-caps tracking-widest text-primary uppercase">{surgery.procedure}</span>
+                      {surgeryPoints.length > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                          <MapPin className="w-3 h-3" /> {surgeryPoints.length} {surgeryPoints.length === 1 ? 'cuadrante' : 'cuadrantes'}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => handleEdit(surgery)} className="text-on-surface-variant hover:text-primary p-1 rounded-full hover:bg-primary-container/20 transition-colors" title="Editar registro">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(surgery.id)} className="text-red-400 hover:text-red-600 p-1 rounded-full hover:bg-red-50 transition-colors" title="Eliminar registro">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <span className="font-body-sm text-on-surface-variant flex items-center gap-1">
+                      <Calendar className="w-4 h-4" /> {formatLocalDate(surgery.date, true)}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex items-center gap-2 text-outline bg-surface-container-high px-3 py-1 rounded-full font-label-sm">
+                      <User className="w-4 h-4" />
+                      {surgery.veterinarian}
+                    </div>
+                    {surgery.nextControl && (
+                      <div className="bg-primary-container/10 text-primary border border-primary-container/20 px-3 py-1 rounded-full font-label-sm">
+                        Control: {formatLocalDate(surgery.nextControl)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {surgeryPoints.length > 0 && (
+                  <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 flex flex-col gap-2">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-primary flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5" />
+                      Zonas Quirúrgicas Marcadas ({surgeryPoints.length})
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {surgeryPoints.map((pt, i) => (
+                        <div key={i} className="text-xs px-2.5 py-1 rounded-lg bg-surface-container-lowest border border-outline-variant/40 flex items-center gap-1.5 shadow-2xs">
+                          <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                          <span className="font-bold text-on-surface">{pt.label}</span>
+                          <span className="text-primary text-[10px] font-medium">({QUADRANT_LABELS[pt.quadrant]})</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <span className="font-body-sm text-on-surface-variant flex items-center gap-1">
-                    <Calendar className="w-4 h-4" /> {formatLocalDate(surgery.date, true)}
-                  </span>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <div className="flex items-center gap-2 text-outline bg-surface-container-high px-3 py-1 rounded-full font-label-sm">
-                    <User className="w-4 h-4" />
-                    {surgery.veterinarian}
-                  </div>
-                  {surgery.nextControl && (
-                    <div className="bg-primary-container/10 text-primary border border-primary-container/20 px-3 py-1 rounded-full font-label-sm">
-                      Control: {formatLocalDate(surgery.nextControl)}
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                <div className="flex flex-col gap-1">
-                  <h5 className="font-label-md text-on-surface-variant m-0 uppercase">Motivo</h5>
-                  <p className="font-body-md text-on-surface m-0">{surgery.reason}</p>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <h5 className="font-label-md text-on-surface-variant m-0 uppercase flex items-center gap-1">
-                    <Activity className="w-4 h-4" /> Anestesia
-                  </h5>
-                  <p className="font-body-md text-on-surface m-0">{surgery.anesthesia}</p>
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-1 mt-2 bg-surface-container-low p-4 rounded-xl border border-outline-variant/50">
-                <h5 className="font-label-md text-on-surface-variant m-0 uppercase">Evolución y Resultado</h5>
-                <p className="font-body-md text-on-surface m-0 whitespace-pre-wrap">{surgery.evolutionResult}</p>
-              </div>
+                )}
 
-              {surgery.observations && (
-                <div className="flex flex-col gap-1">
-                  <h5 className="font-label-md text-on-surface-variant m-0 uppercase">Observaciones</h5>
-                  <p className="font-body-md text-on-surface m-0 whitespace-pre-wrap text-on-surface-variant">{surgery.observations}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                  <div className="flex flex-col gap-1">
+                    <h5 className="font-label-md text-on-surface-variant m-0 uppercase">Motivo</h5>
+                    <p className="font-body-md text-on-surface m-0">{surgery.reason}</p>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <h5 className="font-label-md text-on-surface-variant m-0 uppercase flex items-center gap-1">
+                      <Activity className="w-4 h-4" /> Anestesia
+                    </h5>
+                    <p className="font-body-md text-on-surface m-0">{surgery.anesthesia}</p>
+                  </div>
                 </div>
-              )}
-            </article>
-          ))}
+                
+                <div className="flex flex-col gap-1 mt-2 bg-surface-container-low p-4 rounded-xl border border-outline-variant/50">
+                  <h5 className="font-label-md text-on-surface-variant m-0 uppercase">Evolución y Resultado</h5>
+                  <p className="font-body-md text-on-surface m-0 whitespace-pre-wrap">{surgery.evolutionResult}</p>
+                </div>
+
+                {surgery.observations && (
+                  <div className="flex flex-col gap-1">
+                    <h5 className="font-label-md text-on-surface-variant m-0 uppercase">Observaciones</h5>
+                    <p className="font-body-md text-on-surface m-0 whitespace-pre-wrap text-on-surface-variant">{surgery.observations}</p>
+                  </div>
+                )}
+              </article>
+            );
+          })}
         </div>
       )}
     </div>

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Syringe, FileText, Pill, Scissors, TestTube, Flag } from 'lucide-react';
+import { Syringe, FileText, Pill, Scissors, TestTube, Flag, MapPin } from 'lucide-react';
 import { useVetContext } from '../../context/VetContext';
 import type { Consultation, Prescription, Vaccine, LabResult, Surgery } from '../../services/types';
 import { parseLocalDate, formatLocalDate } from '../../utils/date';
+import { getPointsBySource, QUADRANT_LABELS } from '../../utils/customAnatomyPoints';
 
 interface TimelineEvent {
   id: string;
@@ -12,6 +13,8 @@ interface TimelineEvent {
   description: string;
   icon: React.ElementType;
   colorClass: string;
+  anatomyPointsCount?: number;
+  quadrants?: string[];
 }
 
 export function ActivityTimeline({ patientId }: { patientId: string }) {
@@ -36,6 +39,9 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
 
         // Add Consultations
         consultations.forEach((c: Consultation) => {
+          const points = getPointsBySource(patientId, c.id);
+          const uniqueQuadrants = Array.from(new Set(points.map(p => QUADRANT_LABELS[p.quadrant])));
+
           allEvents.push({
             id: c.id,
             type: 'consultation',
@@ -43,7 +49,9 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
             title: `Consulta: ${c.reason}`,
             description: c.diagnosis || 'Sin diagnóstico registrado',
             icon: FileText,
-            colorClass: 'text-blue-500 border-blue-200 bg-blue-50'
+            colorClass: 'text-blue-500 border-blue-200 bg-blue-50',
+            anatomyPointsCount: points.length,
+            quadrants: uniqueQuadrants
           });
         });
 
@@ -88,6 +96,9 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
 
         // Add Surgeries
         surgeries.forEach((s: Surgery) => {
+          const points = getPointsBySource(patientId, s.id);
+          const uniqueQuadrants = Array.from(new Set(points.map(p => QUADRANT_LABELS[p.quadrant])));
+
           allEvents.push({
             id: s.id,
             type: 'surgery',
@@ -95,7 +106,9 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
             title: `Cirugía: ${s.procedure}`,
             description: s.evolutionResult || 'Procedimiento completado',
             icon: Scissors,
-            colorClass: 'text-rose-500 border-rose-200 bg-rose-50'
+            colorClass: 'text-rose-500 border-rose-200 bg-rose-50',
+            anatomyPointsCount: points.length,
+            quadrants: uniqueQuadrants
           });
         });
 
@@ -172,8 +185,25 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
                 <div className="h-[1px] flex-grow bg-gradient-to-r from-outline-variant to-transparent"></div>
               </div>
               <div className="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant hover:border-primary/50 shadow-sm transition-colors cursor-pointer flex flex-col gap-2">
-                <h4 className="font-headline-md text-headline-md text-on-surface m-0 text-lg">{event.title}</h4>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <h4 className="font-headline-md text-headline-md text-on-surface m-0 text-lg">{event.title}</h4>
+                  {event.anatomyPointsCount !== undefined && event.anatomyPointsCount > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                      <MapPin className="w-3 h-3" />
+                      <span>{event.anatomyPointsCount} {event.anatomyPointsCount === 1 ? 'cuadrante' : 'cuadrantes'}</span>
+                    </span>
+                  )}
+                </div>
                 <p className="font-body-md text-body-md text-on-surface-variant m-0">{event.description}</p>
+                {event.quadrants && event.quadrants.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {event.quadrants.map((q, idx) => (
+                      <span key={idx} className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant border border-outline-variant/40">
+                        {q}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </article>
           );
