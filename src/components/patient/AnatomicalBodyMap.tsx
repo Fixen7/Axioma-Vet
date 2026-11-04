@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Activity, AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Sparkles, X } from 'lucide-react';
+import { Activity, AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Sparkles, X, Eye } from 'lucide-react';
 import type { Patient, Consultation } from '../../services/types';
 import { analyzeAnatomicalFindings, type AnatomicalRegionId } from '../../utils/anatomyKeywords';
 import { formatLocalDate } from '../../utils/date';
@@ -12,6 +12,7 @@ interface AnatomicalBodyMapProps {
 export function AnatomicalBodyMap({ patient, consultations }: AnatomicalBodyMapProps) {
   const [selectedRegionId, setSelectedRegionId] = useState<AnatomicalRegionId | null>(null);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [activeImageVariant, setActiveImageVariant] = useState<'clean' | 'ui' | 'translucent'>('clean');
 
   // Analizar hallazgos anatómicos en tiempo real
   const regions = useMemo(() => {
@@ -27,17 +28,23 @@ export function AnatomicalBodyMap({ patient, consultations }: AnatomicalBodyMapP
     return regions.find(r => r.id === selectedRegionId) || null;
   }, [regions, selectedRegionId]);
 
-  // Coordenadas fijas de los puntos interactivos anatómicos en el SVG (viewBox: 0 0 340 200)
-  const hotspotCoords: Record<AnatomicalRegionId, { x: number; y: number; label: string }> = {
-    head: { x: 74, y: 52, label: 'Cabeza / Sentidos' },
-    neck: { x: 110, y: 76, label: 'Cuello' },
-    thorax: { x: 155, y: 95, label: 'Tórax / Cardio' },
-    spine: { x: 195, y: 64, label: 'Columna / Dorso' },
-    abdomen: { x: 215, y: 105, label: 'Abdomen / Digestivo' },
-    front_limbs: { x: 145, y: 160, label: 'Miembros Ant.' },
-    hind_limbs: { x: 265, y: 155, label: 'Miembros Post.' },
-    skin: { x: 210, y: 35, label: 'Dermatología / Piel' }
+  // Posiciones porcentuales relativas sobre la imagen anatómica zoomorfa lateral
+  const hotspotPositions: Record<AnatomicalRegionId, { top: number; left: number; label: string }> = {
+    head: { top: 26, left: 21, label: 'Cabeza / Sentidos' },
+    neck: { top: 36, left: 32, label: 'Cuello' },
+    thorax: { top: 48, left: 44, label: 'Tórax / Cardio' },
+    spine: { top: 33, left: 56, label: 'Columna / Dorso' },
+    abdomen: { top: 55, left: 62, label: 'Abdomen / Digestivo' },
+    front_limbs: { top: 72, left: 40, label: 'Extremidades Ant.' },
+    hind_limbs: { top: 70, left: 78, label: 'Extremidades Post.' },
+    skin: { top: 18, left: 62, label: 'Dermatología / Piel' }
   };
+
+  const imageSrc = activeImageVariant === 'ui'
+    ? '/anatomy-animal-ui.jpg'
+    : activeImageVariant === 'translucent'
+      ? '/anatomy-animal-translucent.jpg'
+      : '/anatomy-animal-clean.jpg';
 
   return (
     <div className="w-full rounded-[28px] bg-surface-container-lowest/80 backdrop-blur-xl border border-surface-container-high shadow-sm overflow-hidden transition-all duration-300">
@@ -54,7 +61,7 @@ export function AnatomicalBodyMap({ patient, consultations }: AnatomicalBodyMapP
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-headline-sm text-base md:text-lg text-on-surface m-0 font-bold">
-                Mapa Anatómico & Registro de Dolencias
+                Esquema Anatómico Zoomorfo & Dolencias
               </h3>
               {regionsWithFindings.length > 0 ? (
                 <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-950/40 dark:text-amber-300 text-[11px] font-bold">
@@ -67,131 +74,110 @@ export function AnatomicalBodyMap({ patient, consultations }: AnatomicalBodyMapP
               )}
             </div>
             <p className="text-xs text-on-surface-variant m-0 mt-0.5">
-              Referencia visual anatómica para guiar y recordar diagnósticos
+              Ilustración zoomorfa con memoria de antecedentes clínicos por zona
             </p>
           </div>
         </div>
 
-        <button 
-          type="button"
-          className="text-on-surface-variant hover:text-on-surface p-1.5 rounded-xl hover:bg-surface-container transition-colors"
-          aria-label={isExpanded ? 'Colapsar mapa' : 'Expandir mapa'}
-        >
-          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Conmutador sutil de estilo de ilustración para que el doctor elija el que más le guste */}
+          <div 
+            onClick={e => e.stopPropagation()} 
+            className="hidden sm:flex items-center gap-1 bg-surface-container-low p-1 rounded-xl border border-outline-variant/40"
+          >
+            <button
+              type="button"
+              onClick={() => setActiveImageVariant('clean')}
+              className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-colors ${
+                activeImageVariant === 'clean' ? 'bg-surface-container-lowest text-primary shadow-xs' : 'text-outline hover:text-on-surface'
+              }`}
+            >
+              Limpia
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveImageVariant('ui')}
+              className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-colors ${
+                activeImageVariant === 'ui' ? 'bg-surface-container-lowest text-primary shadow-xs' : 'text-outline hover:text-on-surface'
+              }`}
+            >
+              Cian/UI
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveImageVariant('translucent')}
+              className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-colors ${
+                activeImageVariant === 'translucent' ? 'bg-surface-container-lowest text-primary shadow-xs' : 'text-outline hover:text-on-surface'
+              }`}
+            >
+              Suave
+            </button>
+          </div>
+
+          <button 
+            type="button"
+            className="text-on-surface-variant hover:text-on-surface p-1.5 rounded-xl hover:bg-surface-container transition-colors"
+            aria-label={isExpanded ? 'Colapsar mapa' : 'Expandir mapa'}
+          >
+            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {/* CONTENIDO DEL MAPA BENTO */}
       {isExpanded && (
         <div className="p-6 flex flex-col lg:flex-row gap-6 items-center lg:items-start justify-between">
           
-          {/* SILUETA ANATÓMICA SVG MINIMALISTA */}
-          <div className="relative w-full max-w-[380px] bg-gradient-to-b from-surface-container-low/40 to-surface-container-high/20 rounded-2xl p-4 border border-outline-variant/30 flex flex-col items-center">
+          {/* ILUSTRACIÓN ZOOMORFA CON PUNTOS INTERACTIVOS */}
+          <div className="relative w-full max-w-[420px] bg-surface-container-lowest rounded-2xl p-2.5 border border-outline-variant/40 flex flex-col items-center shadow-xs overflow-hidden">
             
-            <svg 
-              viewBox="0 0 340 200" 
-              className="w-full h-auto drop-shadow-sm select-none"
-            >
-              <defs>
-                <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="currentColor" stopOpacity="0.12" />
-                  <stop offset="100%" stopColor="currentColor" stopOpacity="0.05" />
-                </linearGradient>
-              </defs>
-
-              {/* Silueta universal cuadrúpedo (perro/gato/pequeños animales) estilizada y limpia */}
-              <path 
-                d="M 52,58 
-                   C 48,50 56,36 68,36 
-                   C 73,36 78,42 82,45 
-                   C 95,44 105,55 115,68 
-                   C 140,65 175,60 215,62 
-                   C 245,64 265,72 278,92 
-                   C 292,85 305,88 312,98 
-                   C 314,102 308,106 302,104 
-                   C 290,102 284,112 280,122 
-                   L 278,172 C 278,178 268,178 268,172 
-                   L 266,138 C 262,130 252,126 242,128 
-                   C 220,132 195,134 175,124 
-                   L 155,172 C 155,178 145,178 145,172 
-                   L 142,120 
-                   C 132,112 125,98 120,86 
-                   C 114,84 105,80 98,82 
-                   L 88,96 C 82,100 74,96 76,90 
-                   L 80,78 
-                   C 72,76 60,72 52,58 Z"
-                fill="url(#bodyGradient)"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-primary transition-all duration-300"
+            <div className="relative w-full aspect-[16/10] overflow-hidden rounded-xl bg-white flex items-center justify-center">
+              <img 
+                src={imageSrc} 
+                alt="Silueta zoomorfa anatómica veterinaria" 
+                className="w-full h-full object-contain pointer-events-none select-none transition-all duration-300"
               />
 
-              {/* Ojo y hocico sutiles */}
-              <circle cx="64" cy="46" r="2.5" fill="currentColor" className="text-primary/40" />
-              <path d="M 52,58 Q 50,62 54,64" stroke="currentColor" strokeWidth="1.5" fill="none" className="text-primary/40" />
-
-              {/* Oreja representativa */}
-              <path d="M 72,36 Q 78,24 84,38" stroke="currentColor" strokeWidth="2" fill="none" className="text-primary/40" strokeLinecap="round" />
-
-              {/* Puntos interactivos / Hotspots */}
+              {/* Capa de Hotspots Interactivos calibrados sobre la silueta */}
               {regions.map(r => {
-                const coord = hotspotCoords[r.id];
+                const pos = hotspotPositions[r.id];
                 const hasIssues = r.findings.length > 0;
                 const isSelected = selectedRegionId === r.id;
 
                 return (
-                  <g 
+                  <button
                     key={r.id}
+                    type="button"
                     onClick={() => setSelectedRegionId(isSelected ? null : r.id)}
-                    className="cursor-pointer group"
+                    style={{ top: `${pos.top}%`, left: `${pos.left}%` }}
+                    className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-200 group ${
+                      isSelected ? 'scale-125 z-30' : 'hover:scale-115 z-20'
+                    }`}
+                    title={`${r.label}: ${hasIssues ? `${r.findings.length} antecedentes` : 'Sin antecedentes'}`}
                   >
-                    {/* Anillo de pulso si tiene dolencias */}
+                    {/* Anillo de pulso si tiene hallazgos */}
                     {hasIssues && (
-                      <circle 
-                        cx={coord.x} 
-                        cy={coord.y} 
-                        r={isSelected ? "14" : "11"} 
-                        className="fill-amber-500/20 stroke-amber-500/60 animate-pulse"
-                        strokeWidth="1.5"
-                      />
+                      <span className="absolute -inset-1 rounded-full bg-amber-500/40 animate-ping" />
                     )}
 
-                    {/* Círculo central */}
-                    <circle 
-                      cx={coord.x} 
-                      cy={coord.y} 
-                      r={isSelected ? "8" : "6"} 
-                      className={`transition-all duration-200 ${
-                        hasIssues 
-                          ? 'fill-amber-500 stroke-white' 
-                          : isSelected 
-                            ? 'fill-primary stroke-white' 
-                            : 'fill-surface-container-high hover:fill-primary/60 stroke-outline-variant'
-                      }`}
-                      strokeWidth="2"
-                    />
-
-                    {/* Contador si tiene más de 0 hallazgos */}
-                    {hasIssues && (
-                      <text 
-                        x={coord.x} 
-                        y={coord.y + 3.5} 
-                        textAnchor="middle" 
-                        className="text-[9px] font-bold fill-white pointer-events-none select-none"
-                      >
-                        {r.findings.length}
-                      </text>
-                    )}
-                  </g>
+                    <span className={`relative flex items-center justify-center rounded-full border-2 transition-all shadow-md ${
+                      hasIssues
+                        ? 'w-6 h-6 bg-amber-500 border-white text-white font-bold text-[10px]'
+                        : isSelected
+                          ? 'w-5 h-5 bg-primary border-white text-white text-[9px] font-bold'
+                          : 'w-4 h-4 bg-white/95 border-outline-variant hover:border-primary hover:bg-primary/20 shadow-xs'
+                    }`}>
+                      {hasIssues ? r.findings.length : isSelected ? '✓' : ''}
+                    </span>
+                  </button>
                 );
               })}
-            </svg>
+            </div>
 
-            <span className="text-[11px] text-on-surface-variant font-medium mt-2 text-center">
-              Haz clic en cualquier punto del animal para inspeccionar antecedentes
-            </span>
+            <div className="flex items-center justify-between w-full px-2 pt-2 text-[11px] text-on-surface-variant font-medium">
+              <span>Haz clic en los puntos del animal para ver dolencias</span>
+              <span className="text-outline text-[10px]">{regionsWithFindings.length} con antecedentes</span>
+            </div>
           </div>
 
           {/* PANEL LATERAL DE DETALLE DE LA ZONA SELECCIONADA */}
@@ -242,11 +228,16 @@ export function AnatomicalBodyMap({ patient, consultations }: AnatomicalBodyMapP
                 )}
               </div>
             ) : (
-              /* ESTADO POR DEFECTO: RESUMEN DE ZONAS */
+              /* ESTADO POR DEFECTO: BOTONES DE ACCESO RÁPIDO A ZONAS */
               <div className="flex flex-col gap-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-outline">
-                  Zonas Anatómicas del Paciente
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-outline">
+                    Zonas Anatómicas del Animal
+                  </span>
+                  <span className="text-[11px] text-primary flex items-center gap-1 font-medium">
+                    <Eye className="w-3.5 h-3.5" /> Inspección rápida
+                  </span>
+                </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {regions.map(r => {
@@ -256,10 +247,10 @@ export function AnatomicalBodyMap({ patient, consultations }: AnatomicalBodyMapP
                         key={r.id}
                         type="button"
                         onClick={() => setSelectedRegionId(r.id)}
-                        className={`p-2.5 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between ${
+                        className={`p-2.5 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between cursor-pointer ${
                           hasIssues
-                            ? 'bg-amber-50/70 border-amber-300 text-amber-950 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-200 shadow-xs'
-                            : 'bg-surface-container-low/50 border-outline-variant/30 text-on-surface hover:bg-surface-container-high/40'
+                            ? 'bg-amber-50/80 border-amber-300 text-amber-950 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-200 shadow-xs'
+                            : 'bg-surface-container-low/50 border-outline-variant/30 text-on-surface hover:bg-surface-container-high/50'
                         }`}
                       >
                         <span className="text-xs font-bold truncate block">{r.label.split(' ')[0]}</span>
