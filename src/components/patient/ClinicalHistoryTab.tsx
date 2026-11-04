@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, FileText, Calendar, Trash2, Edit, ChevronDown, ChevronUp } from 'lucide-react';
+import { PlusCircle, FileText, Calendar, Trash2, Edit, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useVetContext } from '../../context/VetContext';
 import type { Consultation } from '../../services/types';
@@ -138,6 +138,36 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
               {editId ? 'Editar Consulta' : 'Registro de Consulta'}
             </h4>
           </div>
+
+          {/* CONSULTA ANTERIOR DE REFERENCIA (CLINICAL MEMORY) */}
+          {!editId && consultations.length > 0 && (
+            <div className="bg-primary-container/15 border border-primary/20 rounded-xl p-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-primary flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Memoria Clínica · Consulta Anterior ({formatLocalDate(consultations[0].createdAt)})
+                </span>
+                <span className="text-[11px] font-medium text-outline">
+                  {consultations[0].reason}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div>
+                  <strong className="text-on-surface">Diagnóstico previo:</strong>{' '}
+                  <span className="text-on-surface-variant">{consultations[0].diagnosis || 'No especificado'}</span>
+                </div>
+                <div>
+                  <strong className="text-on-surface">Tratamiento indicado:</strong>{' '}
+                  <span className="text-on-surface-variant">{consultations[0].treatment || 'No especificado'}</span>
+                </div>
+              </div>
+              {consultations[0].observation && (
+                <p className="text-[11px] text-outline italic m-0 line-clamp-2">
+                  "{consultations[0].observation}"
+                </p>
+              )}
+            </div>
+          )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="flex flex-col gap-1.5">
@@ -324,4 +354,3 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
     </div>
   );
 }
-

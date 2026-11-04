@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { Sparkles, TrendingDown, TrendingUp, Calendar, Pill, ChevronDown, ChevronUp, AlertCircle, Info } from 'lucide-react';
+import { Sparkles, TrendingDown, TrendingUp, Calendar, Pill, ChevronDown, ChevronUp, AlertCircle, Info, Search } from 'lucide-react';
 import type { ClinicalMemoryAnalysis } from '../../utils/clinicalMemory';
 import { formatLocalDate } from '../../utils/date';
 
 interface ClinicalMemoryCardProps {
   memory: ClinicalMemoryAnalysis;
   isLoading: boolean;
+  onOpenSimilarCases?: () => void;
 }
 
-export function ClinicalMemoryCard({ memory, isLoading }: ClinicalMemoryCardProps) {
+export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: ClinicalMemoryCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
   if (isLoading) {
@@ -24,10 +25,7 @@ export function ClinicalMemoryCard({ memory, isLoading }: ClinicalMemoryCardProp
   }
 
   const { weightDelta, pendingControl, lastTreatment, importantObservations } = memory;
-
-  // Si no hay hechos documentados que reportar, no mostramos nada para no saturar la pantalla
   const hasFacts = !!weightDelta || !!pendingControl || !!lastTreatment || importantObservations.length > 0;
-  if (!hasFacts) return null;
 
   return (
     <div className="w-full bg-gradient-to-r from-surface-container-lowest via-surface-container-low to-surface-container-lowest border border-primary/20 rounded-2xl shadow-sm overflow-hidden transition-all duration-300">
@@ -46,140 +44,171 @@ export function ClinicalMemoryCard({ memory, isLoading }: ClinicalMemoryCardProp
               Memoria Clínica del Paciente
             </span>
             <span className="text-[11px] text-on-surface-variant hidden sm:inline">
-              · Hechos documentados en visitas previas
+              {hasFacts ? '· Hechos documentados en visitas previas' : '· Monitoreo activo: Sin alertas críticas'}
             </span>
           </div>
         </div>
 
-        <button 
-          type="button"
-          className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg transition-colors"
-          aria-label={isExpanded ? 'Colapsar memoria' : 'Expandir memoria'}
-        >
-          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
+        <div className="flex items-center gap-2">
+          {onOpenSimilarCases && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenSimilarCases();
+              }}
+              className="text-xs px-2.5 py-1 rounded-lg border border-primary/30 text-primary hover:bg-primary/10 transition-colors flex items-center gap-1.5 font-medium"
+              title="Buscar antecedentes y casos similares en la clínica"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Casos Similares</span>
+            </button>
+          )}
+
+          <button 
+            type="button"
+            className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg transition-colors"
+            aria-label={isExpanded ? 'Colapsar memoria' : 'Expandir memoria'}
+          >
+            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {/* CONTENIDO EXPANDIBLE */}
       {isExpanded && (
-        <div className="px-5 pb-5 pt-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 border-t border-outline-variant/30">
-          
-          {/* 1. DELTA PONDERAL INFORMATIVO */}
-          {weightDelta && (
-            <div className={`p-3.5 rounded-xl border flex flex-col justify-between ${
-              weightDelta.isSignificantChange
-                ? 'bg-amber-50/60 border-amber-200/80 text-amber-950 dark:bg-amber-950/20 dark:border-amber-800/40 dark:text-amber-200'
-                : 'bg-surface-container-lowest border-outline-variant/50 text-on-surface'
-            }`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider opacity-70 flex items-center gap-1">
-                  {weightDelta.deltaKg < 0 ? (
-                    <TrendingDown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  ) : (
-                    <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  )}
-                  Variación de Peso
-                </span>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                  weightDelta.isSignificantChange
-                    ? 'bg-amber-200/80 text-amber-900 dark:bg-amber-800/60 dark:text-amber-100'
-                    : 'bg-surface-container-high text-on-surface-variant'
-                }`}>
-                  {weightDelta.deltaKg > 0 ? `+${weightDelta.deltaKg}` : weightDelta.deltaKg} kg ({weightDelta.deltaPercentage > 0 ? `+${weightDelta.deltaPercentage}` : weightDelta.deltaPercentage}%)
-                </span>
+        <>
+          {!hasFacts ? (
+            <div className="px-5 py-3.5 border-t border-outline-variant/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-on-surface-variant">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs"></div>
+                <span>El paciente no presenta alertas ponderales, tratamientos activos ni controles vencidos registrados.</span>
               </div>
-              <p className="text-xs leading-relaxed">
-                De <strong>{weightDelta.previousWeightKg} kg</strong> ({formatLocalDate(weightDelta.previousDate)}) a <strong>{weightDelta.currentWeightKg} kg</strong> ({formatLocalDate(weightDelta.currentDate)}).
-              </p>
-              {weightDelta.isSignificantChange && (
-                <div className="mt-2 pt-2 border-t border-amber-200/60 dark:border-amber-800/40 text-[11px] flex items-center gap-1.5 opacity-90">
-                  <Info className="w-3.5 h-3.5 shrink-0" />
-                  <span>Variación &ge; 5% registrada entre fechas.</span>
-                </div>
+              {onOpenSimilarCases && (
+                <button
+                  type="button"
+                  onClick={onOpenSimilarCases}
+                  className="text-primary hover:underline font-medium text-xs shrink-0"
+                >
+                  Consultar casos de la clínica &rarr;
+                </button>
               )}
             </div>
-          )}
-
-          {/* 2. CONTROL PROGRAMADO DOCUMENTADO */}
-          {pendingControl && (
-            <div className="p-3.5 rounded-xl border bg-surface-container-lowest border-outline-variant/50 text-on-surface flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" />
-                    Control Programado Previo
-                  </span>
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant">
-                    {formatLocalDate(pendingControl.scheduledControlDate)}
-                  </span>
-                </div>
-                <p className="text-xs text-on-surface-variant leading-relaxed">
-                  Consulta del {formatLocalDate(pendingControl.originConsultationDate)}: Se registró fecha de control programada para el <strong>{formatLocalDate(pendingControl.scheduledControlDate)}</strong> sin registro de consulta posterior a esa fecha.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* 3. ÚLTIMO TRATAMIENTO DOCUMENTADO */}
-          {lastTreatment && (
-            <div className="p-3.5 rounded-xl border bg-surface-container-lowest border-outline-variant/50 text-on-surface flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-1">
-                    <Pill className="w-3.5 h-3.5" />
-                    Último Tratamiento Registrado
-                  </span>
-                  <span className="text-[10px] text-on-surface-variant">
-                    {formatLocalDate(
-                      lastTreatment.prescriptionDetails?.date || lastTreatment.freeTextTreatment?.date || ''
-                    )}
-                  </span>
-                </div>
-
-                {lastTreatment.hasStructuredPrescription && lastTreatment.prescriptionDetails && (
-                  <div className="text-xs">
-                    <p className="font-bold text-on-surface">
-                      {lastTreatment.prescriptionDetails.medication}
-                    </p>
-                    <p className="text-[11px] text-on-surface-variant mt-0.5">
-                      {lastTreatment.prescriptionDetails.dosage} · cada {lastTreatment.prescriptionDetails.frequency} por {lastTreatment.prescriptionDetails.duration}
-                    </p>
-                  </div>
-                )}
-
-                {lastTreatment.hasFreeTextTreatment && lastTreatment.freeTextTreatment && !lastTreatment.hasStructuredPrescription && (
-                  <div className="text-xs">
-                    <span className="text-[10px] font-bold uppercase text-outline block mb-0.5">
-                      Indicación en Consulta (Texto Original)
+          ) : (
+            <div className="px-5 pb-5 pt-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 border-t border-outline-variant/30">
+              
+              {/* 1. DELTA PONDERAL INFORMATIVO */}
+              {weightDelta && (
+                <div className={`p-3.5 rounded-xl border flex flex-col justify-between ${
+                  weightDelta.isSignificantChange
+                    ? 'bg-amber-50/60 border-amber-200/80 text-amber-950 dark:bg-amber-950/20 dark:border-amber-800/40 dark:text-amber-200'
+                    : 'bg-surface-container-lowest border-outline-variant/50 text-on-surface'
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-70 flex items-center gap-1">
+                      {weightDelta.deltaKg < 0 ? (
+                        <TrendingDown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                      ) : (
+                        <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      )}
+                      Variación de Peso
                     </span>
-                    <p className="text-on-surface-variant italic line-clamp-3">
-                      "{lastTreatment.freeTextTreatment.text}"
-                    </p>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                      weightDelta.isSignificantChange
+                        ? 'bg-amber-200/80 text-amber-900 dark:bg-amber-800/60 dark:text-amber-100'
+                        : 'bg-surface-container-high text-on-surface-variant'
+                    }`}>
+                      {weightDelta.deltaKg > 0 ? `+${weightDelta.deltaKg}` : weightDelta.deltaKg} kg ({weightDelta.deltaPercentage > 0 ? `+${weightDelta.deltaPercentage}` : weightDelta.deltaPercentage}%)
+                    </span>
                   </div>
-                )}
-              </div>
+                  <p className="text-xs leading-relaxed">
+                    De <strong>{weightDelta.previousWeightKg} kg</strong> ({formatLocalDate(weightDelta.previousDate)}) a <strong>{weightDelta.currentWeightKg} kg</strong> ({formatLocalDate(weightDelta.currentDate)}).
+                  </p>
+                  {weightDelta.isSignificantChange && (
+                    <div className="mt-2 pt-2 border-t border-amber-200/60 dark:border-amber-800/40 text-[11px] flex items-center gap-1.5 opacity-90">
+                      <Info className="w-3.5 h-3.5 shrink-0" />
+                      <span>Variación &ge; 5% registrada entre fechas.</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 2. CONTROL PROGRAMADO PREVIO */}
+              {pendingControl && (
+                <div className="p-3.5 rounded-xl border bg-blue-50/50 border-blue-200/80 text-blue-950 dark:bg-blue-950/20 dark:border-blue-800/40 dark:text-blue-200 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-70 flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      Control Programado Previo
+                    </span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-200/80 text-blue-900 dark:bg-blue-800/60 dark:text-blue-100">
+                      Programado: {formatLocalDate(pendingControl.scheduledControlDate)}
+                    </span>
+                  </div>
+                  <p className="text-xs leading-relaxed">
+                    Consulta del {formatLocalDate(pendingControl.originConsultationDate)}: Se registró fecha de control para el {formatLocalDate(pendingControl.scheduledControlDate)} sin registro de consulta posterior a esa fecha.
+                  </p>
+                  <div className="mt-2 pt-2 border-t border-blue-200/60 dark:border-blue-800/40 text-[11px] flex items-center gap-1.5 opacity-90">
+                    <Info className="w-3.5 h-3.5 shrink-0" />
+                    <span>Registro informativo según agenda de consulta.</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. ÚLTIMO TRATAMIENTO REGISTRADO */}
+              {lastTreatment && (
+                <div className="p-3.5 rounded-xl border bg-surface-container-lowest border-outline-variant/50 text-on-surface flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-70 flex items-center gap-1">
+                        <Pill className="w-3.5 h-3.5 text-primary" />
+                        Último Tratamiento Registrado
+                      </span>
+                    </div>
+                    {lastTreatment.hasStructuredPrescription && lastTreatment.prescriptionDetails && (
+                      <div className="text-xs mb-2">
+                        <span className="text-[10px] font-semibold text-primary block uppercase">Receta Formal ({formatLocalDate(lastTreatment.prescriptionDetails.date)})</span>
+                        <strong className="text-on-surface">{lastTreatment.prescriptionDetails.medication}</strong> - {lastTreatment.prescriptionDetails.dosage} ({lastTreatment.prescriptionDetails.frequency}, {lastTreatment.prescriptionDetails.duration})
+                      </div>
+                    )}
+                    {lastTreatment.hasFreeTextTreatment && lastTreatment.freeTextTreatment && (
+                      <div className="text-xs">
+                        <span className="text-[10px] font-semibold text-outline block uppercase">Anotación en Consulta ({formatLocalDate(lastTreatment.freeTextTreatment.date)})</span>
+                        <p className="line-clamp-2 text-on-surface-variant italic mt-0.5">"{lastTreatment.freeTextTreatment.text}"</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-outline-variant/30 text-[11px] text-outline">
+                    Hecho clínico documentado en atención previa.
+                  </div>
+                </div>
+              )}
+
+              {/* 4. OBSERVACIONES CLÍNICAS IMPORTANTES */}
+              {importantObservations.length > 0 && (
+                <div className="p-3.5 rounded-xl border bg-surface-container-lowest border-outline-variant/50 text-on-surface flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-70 flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 text-primary" />
+                        Observaciones Clínicas Importantes
+                      </span>
+                    </div>
+                    <ul className="text-xs space-y-1.5 text-on-surface-variant list-disc list-inside">
+                      {importantObservations.map((obs, idx) => (
+                        <li key={idx} className="leading-relaxed">
+                          <span className="text-on-surface font-medium">{obs.text}</span>
+                          <span className="text-[10px] text-outline block ml-4">({obs.source}{obs.date ? ` - ${formatLocalDate(obs.date)}` : ''})</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
-
-          {/* 4. OBSERVACIONES CLÍNICAS IMPORTANTES (TEXTO ORIGINAL) */}
-          {importantObservations.map((obs, idx) => (
-            <div key={idx} className="p-3.5 rounded-xl border bg-surface-container-lowest border-outline-variant/50 text-on-surface flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-outline flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5 text-primary" />
-                    {obs.source}
-                  </span>
-                  {obs.date && <span className="text-[10px] text-on-surface-variant">{formatLocalDate(obs.date)}</span>}
-                </div>
-                <p className="text-xs text-on-surface-variant leading-relaxed">
-                  "{obs.text}"
-                </p>
-              </div>
-            </div>
-          ))}
-
-        </div>
+        </>
       )}
 
     </div>

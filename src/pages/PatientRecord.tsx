@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Activity, Scissors, Syringe, TestTube, FileText, Pill, Edit, Dog, Cat, Bird, HeartPulse, AlertTriangle, Trash2, TrendingUp } from 'lucide-react';
+import { Activity, Scissors, Syringe, TestTube, FileText, Pill, Edit, Dog, Cat, Bird, HeartPulse, AlertTriangle, Trash2, TrendingUp, UserCheck, Sparkles } from 'lucide-react';
 import { TopAppBar } from '../components/layout/TopAppBar';
 import { Button } from '../components/ui/Button';
 import { useVetContext } from '../context/VetContext';
@@ -13,10 +13,12 @@ import { SurgeriesTab } from '../components/patient/SurgeriesTab';
 import { PrescriptionsTab } from '../components/patient/PrescriptionsTab';
 import { GroomingTab } from '../components/patient/GroomingTab';
 import { WeightHistoryModal } from '../components/patient/WeightHistoryModal';
+import { TutorSummaryModal } from '../components/patient/TutorSummaryModal';
+import { SimilarCasesModal } from '../components/patient/SimilarCasesModal';
 import { calculateAge } from '../utils/date';
-import { useEffect } from 'react';
 import { ClinicalMemoryCard } from '../components/patient/ClinicalMemoryCard';
 import { buildClinicalMemory, type ClinicalMemoryAnalysis } from '../utils/clinicalMemory';
+import type { Consultation, Prescription, WeightRecord } from '../services/types';
 
 type Tab = 'activity' | 'history' | 'vaccines' | 'surgeries' | 'labs' | 'prescriptions' | 'grooming';
 
@@ -30,7 +32,15 @@ export default function PatientRecord() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showWeightHistoryModal, setShowWeightHistoryModal] = useState(false);
+  const [showTutorSummaryModal, setShowTutorSummaryModal] = useState(false);
+  const [showSimilarCasesModal, setShowSimilarCasesModal] = useState(false);
   const [newWeight, setNewWeight] = useState('');
+  const [memoryVersion, setMemoryVersion] = useState(0);
+
+  const [cachedConsultations, setCachedConsultations] = useState<Consultation[]>([]);
+  const [cachedPrescriptions, setCachedPrescriptions] = useState<Prescription[]>([]);
+  const [cachedWeights, setCachedWeights] = useState<WeightRecord[]>([]);
+
   const [statusForm, setStatusForm] = useState<{ status: string, behaviorObservation: string }>({
     status: 'NORMAL',
     behaviorObservation: ''
@@ -38,7 +48,7 @@ export default function PatientRecord() {
 
   const patient = patients.find(p => p.id === id);
 
-  const { getConsultations, getPrescriptions, getWeightRecords } = useVetContext();
+  const { getConsultations, getPrescriptions, getWeightRecords, updatePatient, saveWeightRecord } = useVetContext();
   const [clinicalMemory, setClinicalMemory] = useState<ClinicalMemoryAnalysis>({
     weightDelta: null,
     pendingControl: null,
@@ -47,20 +57,16 @@ export default function PatientRecord() {
   });
   const [isLoadingMemory, setIsLoadingMemory] = useState(true);
 
+  const refreshMemory = () => {
+    setMemoryVersion(v => v + 1);
+  };
+
   // Carga asíncrona segura con protección contra race conditions por cambio de paciente
   useEffect(() => {
     if (!id || !patient) return;
 
     let isMounted = true;
     setIsLoadingMemory(true);
-
-    // Limpiar memoria previa inmediatamente para no mezclar datos de pacientes
-    setClinicalMemory({
-      weightDelta: null,
-      pendingControl: null,
-      lastTreatment: null,
-      importantObservations: []
-    });
 
     const loadMemoryData = async () => {
       try {
@@ -71,6 +77,10 @@ export default function PatientRecord() {
         ]);
 
         if (!isMounted) return;
+
+        setCachedConsultations(consultationsData);
+        setCachedPrescriptions(prescriptionsData);
+        setCachedWeights(weightsData);
 
         const memory = buildClinicalMemory(patient, consultationsData, prescriptionsData, weightsData);
         setClinicalMemory(memory);
@@ -88,7 +98,7 @@ export default function PatientRecord() {
     return () => {
       isMounted = false;
     };
-  }, [id, patient?.id, patient?.weight, patient?.behaviorObservation]);
+  }, [id, patient?.id, patient?.weight, patient?.behaviorObservation, memoryVersion]);
 
   if (!patient) {
     return (
@@ -112,9 +122,8 @@ export default function PatientRecord() {
   const handleSaveStatus = async () => {
     await updatePatientStatus(patient.id, statusForm.status as any, statusForm.behaviorObservation);
     setShowStatusModal(false);
+    refreshMemory();
   };
-
-  const { updatePatient, saveWeightRecord } = useVetContext();
 
   const handleSaveWeight = async () => {
     if (!newWeight) return;
@@ -128,6 +137,7 @@ export default function PatientRecord() {
       });
       setShowWeightModal(false);
       setNewWeight('');
+      refreshMemory();
     } catch (error: any) {
       alert("Error al actualizar peso: " + error.message);
     }
@@ -164,39 +174,43 @@ export default function PatientRecord() {
 
   const statusInfo = getStatusDisplay();
 
-  const renderTabButton = (tab: Tab, label: string, Icon: React.ElementType) => {
-    const isActive = activeTab === tab;
-    return (
-      <button 
-        onClick={() => setActiveTab(tab)}
-        className={`h-12 md:h-16 px-4 md:px-6 rounded-xl md:rounded-2xl border transition-colors flex items-center justify-center gap-2 md:gap-3 font-body-sm md:font-body-md shadow-sm flex-grow md:flex-grow-0 ${
-          isActive 
-            ? 'bg-primary-container/20 border-primary/30 text-primary font-bold' 
-            : 'bg-surface border-outline-variant text-on-surface-variant hover:bg-surface-container'
-        }`}
-      >
-        <Icon className={`w-4 h-4 md:w-5 md:h-5 ${isActive ? 'text-primary' : 'text-on-surface-variant'}`} />
-        <span className="whitespace-nowrap">{label}</span>
-      </button>
-    );
-  };
+  const renderTabButton = (tab: Tab, label: string, Icon: any) => (
+    <button
+      onClick={() => setActiveTab(tab)}
+      className={`flex items-center gap-2 px-5 py-3 rounded-full font-label-lg transition-all duration-300 relative ${
+        activeTab === tab
+          ? 'bg-primary-container text-primary font-bold shadow-sm'
+          : 'bg-surface-variant text-outline hover:bg-surface-container-high hover:text-on-surface'
+      }`}
+    >
+      <Icon className="w-4 h-4" />
+      <span>{label}</span>
+      {activeTab === tab && (
+        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
+      )}
+    </button>
+  );
 
   return (
-    <div className={`min-h-screen bg-surface text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container flex flex-col items-center ${isDeceased ? 'grayscale' : ''}`}>
-      <TopAppBar 
-        title={patient.name} 
-        subtitle={`${patient.species}, ${patient.gender === 'M' ? 'Macho' : patient.gender === 'F' ? 'Hembra' : 'Desconocido'}`} 
-      />
+    <div className="min-h-screen bg-surface flex flex-col print:bg-white print:min-h-0">
+      <TopAppBar title={patient.name} subtitle={patient.species} />
 
-      {isDeceased && (
-        <div className="w-full bg-surface-variant border-b border-outline-variant py-3 px-4 flex items-center justify-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-outline" />
-          <span className="font-label-md text-outline font-medium tracking-wide">EXPEDIENTE CERRADO POR FALLECIMIENTO (No admite ediciones)</span>
-        </div>
-      )}
-
-      <main className="w-full max-w-5xl px-4 md:px-container-padding py-8 md:py-12 flex flex-col gap-8 print:p-0 print:m-0">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-stack-padding flex flex-col gap-6 print:p-0 print:max-w-none">
         
+        {/* Banner de Fallecido */}
+        {isDeceased && (
+          <div className="w-full bg-surface-container-high border border-outline-variant p-4 rounded-2xl flex items-center gap-3 text-outline print:hidden">
+            <AlertTriangle className="w-6 h-6 text-outline" />
+            <div>
+              <h4 className="font-headline-sm m-0 text-on-surface">Paciente Fallecido</h4>
+              <p className="font-body-sm m-0 text-outline">
+                El historial clínico y registros se encuentran archivados en modo de solo lectura.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Profile Card */}
         <section className={`level-1-surface rounded-[24px] p-6 md:p-stack-padding flex flex-col md:flex-row gap-8 items-start relative overflow-hidden group print:hidden ${isDeceased ? 'opacity-90' : ''}`}>
           {!isDeceased && (
             <div className="absolute -top-32 -right-32 w-64 h-64 bg-primary-container opacity-[0.1] rounded-full blur-[80px] group-hover:opacity-[0.15] transition-opacity duration-700"></div>
@@ -240,15 +254,13 @@ export default function PatientRecord() {
                     {patient.weight ? (patient.weight.toLowerCase().includes('kg') ? patient.weight : `${patient.weight} kg`) : 'SIN PESO'}
                     <Edit className="w-3 h-3 ml-1 opacity-50" />
                   </button>
-                  {patient.weight && (
-                    <button 
-                      onClick={() => setShowWeightHistoryModal(true)}
-                      className="inline-flex items-center justify-center px-3 py-2 border-l border-outline-variant hover:bg-surface-container-high transition-colors text-primary bg-surface-container-low"
-                      title="Ver Historial de Peso"
-                    >
-                      <TrendingUp className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button 
+                    onClick={() => setShowWeightHistoryModal(true)}
+                    className="inline-flex items-center justify-center px-3 py-2 border-l border-outline-variant hover:bg-surface-container-high transition-colors text-primary bg-surface-container-low"
+                    title="Ver, editar o eliminar historial de peso"
+                  >
+                    <TrendingUp className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -277,13 +289,31 @@ export default function PatientRecord() {
             </div>
 
             {!isDeceased && (
-              <div className="flex gap-4 print:hidden">
+              <div className="flex gap-3 flex-wrap print:hidden">
                 <Button variant="outline" onClick={() => navigate(`/patient/edit/${patient.id}`)}>
-                  <Edit className="w-5 h-5" />
+                  <Edit className="w-4 h-4 mr-1.5" />
                   Editar Perfil
                 </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowTutorSummaryModal(true)}
+                  className="border-primary/40 text-primary hover:bg-primary/5"
+                  title="Generar resumen de atención claro para el propietario"
+                >
+                  <UserCheck className="w-4 h-4 mr-1.5" />
+                  Resumen Tutor
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowSimilarCasesModal(true)}
+                  className="border-outline-variant hover:bg-surface-container"
+                  title="Consultar casos similares registrados en la clínica"
+                >
+                  <Sparkles className="w-4 h-4 mr-1.5 text-primary" />
+                  Casos Similares
+                </Button>
                 <Button variant="ghost" onClick={handleDeletePatient} className="text-red-500 hover:bg-red-50 hover:text-red-600 border border-red-200">
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-4 h-4 mr-1.5" />
                   Eliminar Paciente
                 </Button>
               </div>
@@ -291,9 +321,13 @@ export default function PatientRecord() {
           </div>
         </section>
 
-        {/* AXIOMA CLINICAL MEMORY - FASE 1 */}
+        {/* AXIOMA CLINICAL MEMORY - FASE 1 & FASE 2 */}
         <div className="w-full print:hidden -mt-2">
-          <ClinicalMemoryCard memory={clinicalMemory} isLoading={isLoadingMemory} />
+          <ClinicalMemoryCard 
+            memory={clinicalMemory} 
+            isLoading={isLoadingMemory} 
+            onOpenSimilarCases={() => setShowSimilarCasesModal(true)}
+          />
         </div>
 
         <nav className="flex flex-wrap gap-2 md:gap-4 pb-4 print:hidden w-full">
@@ -331,31 +365,32 @@ export default function PatientRecord() {
         </section>
       </main>
 
-      {/* Status Modal */}
+      {/* Modales */}
       {showStatusModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 print:hidden">
           <div className="bg-surface-container rounded-[24px] p-6 md:p-8 w-full max-w-md shadow-2xl flex flex-col gap-6 animate-in fade-in zoom-in duration-300">
             <div>
-              <h2 className="font-display text-2xl text-on-surface mb-2">Estado Clínico</h2>
+              <h2 className="font-display text-2xl text-on-surface mb-2">Estado del Paciente</h2>
               <p className="font-body-md text-on-surface-variant">
-                Actualiza el estado de manejo y precauciones para este paciente.
+                Actualiza el estado clínico y agrega notas sobre el comportamiento o precauciones.
               </p>
             </div>
 
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <label className="font-label-md text-on-surface-variant">Estado</label>
+                <label className="font-label-md text-on-surface-variant">Estado Clínico</label>
                 <select 
                   value={statusForm.status}
                   onChange={(e) => setStatusForm({ ...statusForm, status: e.target.value })}
                   className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none"
                 >
-                  <option value="NORMAL">Normal (Verde)</option>
-                  <option value="PRECAUTION">Precaución (Amarillo)</option>
-                  <option value="HIGH_RISK">Alto Riesgo (Rojo)</option>
-                  <option value="DECEASED">Fallecido (Gris)</option>
+                  <option value="NORMAL">Al Día / Normal</option>
+                  <option value="PRECAUTION">Precaución</option>
+                  <option value="HIGH_RISK">Alto Riesgo</option>
+                  <option value="DECEASED">Fallecido</option>
                 </select>
               </div>
+
               <div className="flex flex-col gap-2">
                 <label className="font-label-md text-on-surface-variant">Observaciones de Manejo</label>
                 <textarea 
@@ -410,7 +445,26 @@ export default function PatientRecord() {
       {showWeightHistoryModal && (
         <WeightHistoryModal 
           patientId={patient.id} 
-          onClose={() => setShowWeightHistoryModal(false)} 
+          onClose={() => setShowWeightHistoryModal(false)}
+          onWeightChanged={refreshMemory}
+        />
+      )}
+
+      {showTutorSummaryModal && (
+        <TutorSummaryModal
+          patient={patient}
+          consultations={cachedConsultations}
+          prescriptions={cachedPrescriptions}
+          weights={cachedWeights}
+          onClose={() => setShowTutorSummaryModal(false)}
+        />
+      )}
+
+      {showSimilarCasesModal && (
+        <SimilarCasesModal
+          currentPatient={patient}
+          initialDiagnosis={cachedConsultations.length > 0 ? cachedConsultations[0].diagnosis : ''}
+          onClose={() => setShowSimilarCasesModal(false)}
         />
       )}
     </div>
