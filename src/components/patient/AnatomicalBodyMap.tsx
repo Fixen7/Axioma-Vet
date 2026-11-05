@@ -127,27 +127,27 @@ export function AnatomicalBodyMap({
     switch (type) {
       case 'problem':
         return {
-          bg: 'bg-red-600',
+          bg: 'bg-[#dc2626]',
           border: 'border-white',
           text: 'text-white',
           ping: 'bg-red-500/50',
-          badge: 'bg-red-700 text-white font-bold'
+          badge: 'bg-[#dc2626] text-white font-black'
         };
       case 'observation':
         return {
-          bg: 'bg-indigo-600',
+          bg: 'bg-[#4f46e5]',
           border: 'border-white',
           text: 'text-white',
           ping: 'bg-indigo-500/40',
-          badge: 'bg-indigo-700 text-white font-bold'
+          badge: 'bg-[#4f46e5] text-white font-black'
         };
       case 'resolved':
         return {
-          bg: 'bg-emerald-600',
+          bg: 'bg-[#059669]',
           border: 'border-white',
           text: 'text-white',
           ping: 'bg-emerald-500/40',
-          badge: 'bg-emerald-700 text-white font-bold'
+          badge: 'bg-[#059669] text-white font-black'
         };
     }
   };
@@ -157,23 +157,23 @@ export function AnatomicalBodyMap({
     : '/anatomy-canine.jpg';
 
   return (
-    <div className="w-full rounded-[28px] bg-white dark:bg-surface-container-lowest border border-slate-200 dark:border-surface-container-high shadow-sm overflow-hidden transition-all duration-300">
+    <div className="w-full rounded-[28px] bg-white border-2 border-slate-200 shadow-sm overflow-hidden transition-all duration-300 text-[#131b2e]">
       
       {/* HEADER BENTO (RESUMEN ACUMULADO) */}
       <div 
         onClick={() => setIsExpanded(prev => !prev)}
-        className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-surface-container-high/20 transition-colors select-none border-b border-slate-200 dark:border-surface-container-high/60"
+        className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer hover:bg-slate-50 transition-colors select-none border-b border-slate-200"
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-xs shrink-0">
-            <Activity className="w-5 h-5" />
+            <Activity className="w-5 h-5 text-primary" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-headline-sm text-base md:text-lg text-slate-900 dark:text-white m-0 font-bold">
+              <h3 className="text-base md:text-lg text-[#131b2e] m-0 font-black">
                 Esquema Anatómico del Paciente
               </h3>
-              <span className="text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 tracking-wider">
+              <span className="text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full bg-slate-100 text-[#131b2e] border-2 border-slate-300 tracking-wider">
                 Informativo
               </span>
               {points.length > 0 && (
@@ -182,25 +182,25 @@ export function AnatomicalBodyMap({
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300 m-0 mt-0.5 font-medium">
+            <p className="text-xs text-[#4a4455] m-0 mt-0.5 font-bold">
               Suma acumulada de cuadrantes y zonas documentadas en consultas o cirugías
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 self-end md:self-auto">
-          {/* Conmutador de Especie Canino / Felino (ALTO CONTRASTE) */}
+          {/* Conmutador de Especie Canino / Felino (ALTO CONTRASTE ABSOLUTO) */}
           <div 
             onClick={e => e.stopPropagation()} 
-            className="flex items-center gap-1 bg-slate-100 dark:bg-surface-container-low p-1 rounded-xl border border-slate-300 dark:border-outline-variant/40"
+            className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border-2 border-slate-300"
           >
             <button
               type="button"
               onClick={() => setActiveSpeciesView('canine')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeSpeciesView === 'canine' 
                   ? 'bg-primary text-white shadow-xs' 
-                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-[#131b2e] hover:text-black'
               }`}
             >
               <Dog className="w-3.5 h-3.5" /> Canino
@@ -208,10 +208,10 @@ export function AnatomicalBodyMap({
             <button
               type="button"
               onClick={() => setActiveSpeciesView('feline')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeSpeciesView === 'feline' 
                   ? 'bg-primary text-white shadow-xs' 
-                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-[#131b2e] hover:text-black'
               }`}
             >
               <Cat className="w-3.5 h-3.5" /> Felino
@@ -220,7 +220,7 @@ export function AnatomicalBodyMap({
 
           <button 
             type="button"
-            className="text-slate-700 dark:text-slate-300 hover:text-slate-900 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-surface-container transition-colors"
+            className="text-[#131b2e] hover:text-black p-1.5 rounded-xl hover:bg-slate-100 transition-colors"
             aria-label={isExpanded ? 'Colapsar mapa' : 'Expandir mapa'}
           >
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -230,22 +230,22 @@ export function AnatomicalBodyMap({
 
       {/* CONTENIDO DEL MAPA BENTO */}
       {isExpanded && (
-        <div className="p-6 flex flex-col gap-5 bg-slate-50/50 dark:bg-transparent">
+        <div className="p-6 flex flex-col gap-5 bg-slate-50/60">
 
           {/* BARRA DE FILTROS Y MÉTRICAS ACUMULADAS */}
           {points.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-surface-container-high/40">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mr-1">
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#131b2e] mr-1">
                   Ver:
                 </span>
                 <button
                   type="button"
                   onClick={() => setFilterSource('all')}
-                  className={`text-xs px-3 py-1 rounded-lg font-bold transition-colors cursor-pointer ${
+                  className={`text-xs px-3 py-1 rounded-lg font-black transition-colors cursor-pointer ${
                     filterSource === 'all'
                       ? 'bg-primary text-white shadow-2xs'
-                      : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-300 dark:bg-surface-container-low dark:text-slate-300 dark:border-outline-variant/40'
+                      : 'bg-white text-[#131b2e] hover:bg-slate-100 border-2 border-slate-300'
                   }`}
                 >
                   Todos ({points.length})
@@ -254,10 +254,10 @@ export function AnatomicalBodyMap({
                   <button
                     type="button"
                     onClick={() => setFilterSource('consultation')}
-                    className={`text-xs px-3 py-1 rounded-lg font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                    className={`text-xs px-3 py-1 rounded-lg font-black transition-colors flex items-center gap-1.5 cursor-pointer ${
                       filterSource === 'consultation'
-                        ? 'bg-blue-700 text-white shadow-2xs'
-                        : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-300 dark:bg-surface-container-low dark:text-slate-300 dark:border-outline-variant/40'
+                        ? 'bg-[#1d4ed8] text-white shadow-2xs'
+                        : 'bg-white text-[#131b2e] hover:bg-slate-100 border-2 border-slate-300'
                     }`}
                   >
                     <Stethoscope className="w-3.5 h-3.5" /> De Consultas ({consultationPointsCount})
@@ -267,10 +267,10 @@ export function AnatomicalBodyMap({
                   <button
                     type="button"
                     onClick={() => setFilterSource('surgery')}
-                    className={`text-xs px-3 py-1 rounded-lg font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                    className={`text-xs px-3 py-1 rounded-lg font-black transition-colors flex items-center gap-1.5 cursor-pointer ${
                       filterSource === 'surgery'
-                        ? 'bg-rose-700 text-white shadow-2xs'
-                        : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-300 dark:bg-surface-container-low dark:text-slate-300 dark:border-outline-variant/40'
+                        ? 'bg-[#be123c] text-white shadow-2xs'
+                        : 'bg-white text-[#131b2e] hover:bg-slate-100 border-2 border-slate-300'
                     }`}
                   >
                     <Scissors className="w-3.5 h-3.5" /> De Cirugías ({surgeryPointsCount})
@@ -278,21 +278,21 @@ export function AnatomicalBodyMap({
                 )}
               </div>
 
-              {/* Badges de severidad acumulada (ALTO CONTRASTE) */}
+              {/* Badges de severidad acumulada (ALTO CONTRASTE ABSOLUTO) */}
               <div className="flex items-center gap-2">
                 {activeProblemsCount > 0 && (
-                  <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-red-600 text-white shadow-xs flex items-center gap-1.5">
+                  <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-[#dc2626] text-white shadow-xs flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
                     {activeProblemsCount} {activeProblemsCount === 1 ? 'dolencia activa' : 'dolencias activas'}
                   </span>
                 )}
                 {observationsCount > 0 && (
-                  <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-indigo-700 text-white shadow-xs">
+                  <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-[#4f46e5] text-white shadow-xs">
                     {observationsCount} obs.
                   </span>
                 )}
                 {resolvedCount > 0 && (
-                  <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-700 text-white shadow-xs">
+                  <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-[#059669] text-white shadow-xs">
                     {resolvedCount} resueltas
                   </span>
                 )}
@@ -304,7 +304,7 @@ export function AnatomicalBodyMap({
             
             {/* ÁREA DE VISUALIZACIÓN DE LA SILUETA (SUMA ACUMULADA) */}
             <div className="flex flex-col items-center w-full max-w-[440px]">
-              <div className="relative w-full aspect-[16/10] bg-white rounded-2xl p-1.5 border border-slate-300 dark:border-outline-variant/60 shadow-xs overflow-hidden select-none">
+              <div className="relative w-full aspect-[16/10] bg-white rounded-2xl p-1.5 border-2 border-slate-300 shadow-xs overflow-hidden select-none">
                 <img 
                   src={currentImage} 
                   alt={`Silueta zoomorfa ${activeSpeciesView}`} 
@@ -340,17 +340,17 @@ export function AnatomicalBodyMap({
                 })}
               </div>
 
-              <div className="flex items-center justify-between w-full px-2 pt-2.5 text-xs text-slate-700 dark:text-slate-300 font-semibold">
+              <div className="flex items-center justify-between w-full px-2 pt-2.5 text-xs text-[#131b2e] font-bold">
                 <span>Haz clic en un punto para inspeccionar</span>
-                <span className="text-slate-500 dark:text-slate-400 font-black uppercase text-[11px]">{activeSpeciesView}</span>
+                <span className="text-[#4a4455] font-black uppercase text-[11px]">{activeSpeciesView}</span>
               </div>
             </div>
 
-            {/* PANEL LATERAL: DETALLE O REGISTRO PUNTO POR PUNTO (ALTO CONTRASTE) */}
+            {/* PANEL LATERAL: DETALLE O REGISTRO PUNTO POR PUNTO (ALTO CONTRASTE ABSOLUTO) */}
             <div className="flex-1 w-full flex flex-col justify-between min-h-[220px]">
               {selectedPoint ? (
                 /* DETALLE DEL PUNTO SELECCIONADO */
-                <div className="bg-white dark:bg-surface-container-low/70 rounded-2xl p-5 border border-slate-300 dark:border-outline-variant/60 flex flex-col gap-3.5 shadow-sm animate-in fade-in duration-200">
+                <div className="bg-white rounded-2xl p-5 border-2 border-slate-300 flex flex-col gap-3.5 shadow-sm animate-in fade-in duration-200">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       {/* Cuadrante anatómico */}
@@ -358,7 +358,7 @@ export function AnatomicalBodyMap({
                         <MapPin className="w-4 h-4 shrink-0" />
                         <span>{QUADRANT_LABELS[selectedPoint.quadrant]}</span>
                       </div>
-                      <h4 className="text-base font-black text-slate-900 dark:text-white m-0">{selectedPoint.label}</h4>
+                      <h4 className="text-base font-black text-[#131b2e] m-0">{selectedPoint.label}</h4>
                     </div>
 
                     <span className={`text-[11px] uppercase font-black tracking-wider px-2.5 py-1 rounded-lg shrink-0 ${getPinColor(selectedPoint.type).badge}`}>
@@ -367,9 +367,9 @@ export function AnatomicalBodyMap({
                   </div>
 
                   {/* Origen del punto (Consulta o Cirugía específica) */}
-                  <div className="bg-slate-50 dark:bg-surface-container-lowest p-3.5 rounded-xl border border-slate-200 dark:border-outline-variant/30 flex flex-col gap-2 text-xs">
-                    <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 text-xs font-semibold">
-                      <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <div className="bg-slate-100 p-3.5 rounded-xl border border-slate-200 flex flex-col gap-2 text-xs">
+                    <div className="flex items-center justify-between text-[#4a4455] text-xs font-bold">
+                      <span className="font-black text-[#131b2e] flex items-center gap-1.5">
                         {selectedPoint.sourceType === 'surgery' ? (
                           <Scissors className="w-4 h-4 text-rose-600 shrink-0" />
                         ) : (
@@ -377,21 +377,21 @@ export function AnatomicalBodyMap({
                         )}
                         {selectedPoint.sourceTitle || (selectedPoint.sourceType === 'surgery' ? 'Registro de Cirugía' : 'Registro de Historia Clínica')}
                       </span>
-                      <span className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300">
+                      <span className="flex items-center gap-1 font-black text-[#131b2e]">
                         <Calendar className="w-3.5 h-3.5" />
                         {formatLocalDate(selectedPoint.date)}
                       </span>
                     </div>
 
                     {selectedPoint.notes && (
-                      <p className="text-slate-800 dark:text-slate-200 m-0 mt-1 italic font-medium leading-relaxed bg-white dark:bg-surface-container p-2.5 rounded-lg border border-slate-200/60 dark:border-outline-variant/30">
+                      <p className="text-[#131b2e] m-0 mt-1 italic font-bold leading-relaxed bg-white p-2.5 rounded-lg border border-slate-200">
                         "{selectedPoint.notes}"
                       </p>
                     )}
                   </div>
 
-                  <div className="flex justify-between items-center pt-1 border-t border-slate-200 dark:border-outline-variant/30">
-                    <span className="text-xs text-slate-600 dark:text-slate-400 font-bold">
+                  <div className="flex justify-between items-center pt-1 border-t border-slate-200">
+                    <span className="text-xs text-[#4a4455] font-black">
                       Punto acumulado #{visiblePoints.findIndex(p => p.id === selectedPoint.id) + 1}
                     </span>
                     <button
@@ -404,31 +404,31 @@ export function AnatomicalBodyMap({
                   </div>
                 </div>
               ) : points.length === 0 ? (
-                /* MENSAJE CUANDO AÚN NO TIENE PUNTOS REGISTRADOS */
-                <div className="h-full py-8 px-6 bg-white dark:bg-surface-container-low/40 rounded-2xl border border-dashed border-slate-300 dark:border-outline-variant/60 flex flex-col items-center justify-center text-center gap-2.5">
+                /* MENSAJE CUANDO AÚN NO TIENE PUNTOS REGISTRADOS (LEGIBILIDAD TOTAL) */
+                <div className="h-full py-8 px-6 bg-white rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-center gap-2.5 shadow-2xs">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
                     <MapPin className="w-6 h-6" />
                   </div>
-                  <h4 className="font-black text-sm text-slate-900 dark:text-white m-0">
+                  <h4 className="font-black text-sm text-[#131b2e] m-0 leading-snug">
                     Aún no hay puntos anatómicos registrados en la historia clínica o cirugías
                   </h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 m-0 max-w-sm leading-relaxed font-medium">
+                  <p className="text-xs text-[#4a4455] m-0 max-w-sm leading-relaxed font-bold">
                     Al registrar una consulta o cirugía, marca las zonas y cuadrantes correspondientes para llevar un mejor seguimiento visual de la evolución del paciente.
                   </p>
                 </div>
               ) : (
-                /* REGISTRO ACUMULADO PUNTO POR PUNTO (ALTO CONTRASTE) */
+                /* REGISTRO ACUMULADO PUNTO POR PUNTO (ALTO CONTRASTE ABSOLUTO) */
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#131b2e]">
                       Cuadrantes con Registros ({visiblePoints.length})
                     </span>
-                    <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                    <span className="text-xs text-[#4a4455] font-bold">
                       Haz clic en un punto para inspeccionar
                     </span>
                   </div>
 
-                  <div className="divide-y divide-slate-200 dark:divide-surface-container-high border border-slate-300 dark:border-surface-container-high rounded-xl overflow-hidden bg-white dark:bg-surface-container-lowest max-h-[190px] overflow-y-auto shadow-2xs">
+                  <div className="divide-y divide-slate-200 border-2 border-slate-300 rounded-xl overflow-hidden bg-white max-h-[190px] overflow-y-auto shadow-2xs">
                     {visiblePoints.map((p, idx) => {
                       const colors = getPinColor(p.type);
                       const isSurgery = p.sourceType === 'surgery';
@@ -437,14 +437,14 @@ export function AnatomicalBodyMap({
                         <div
                           key={p.id}
                           onClick={() => setSelectedPointId(p.id)}
-                          className="p-3 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-surface-container-high/30 transition-colors cursor-pointer"
+                          className="p-3 text-xs flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer"
                         >
                           <div className="flex items-center gap-2.5 truncate">
                             <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0 ${colors.bg}`}>
                               {idx + 1}
                             </span>
                             <div className="truncate">
-                              <p className="font-bold text-slate-900 dark:text-white m-0 truncate leading-tight flex items-center gap-1.5 text-xs">
+                              <p className="font-black text-[#131b2e] m-0 truncate leading-tight flex items-center gap-1.5 text-xs">
                                 {isSurgery ? (
                                   <Scissors className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                                 ) : (
@@ -452,14 +452,14 @@ export function AnatomicalBodyMap({
                                 )}
                                 <span className="truncate">{p.label}</span>
                               </p>
-                              <p className="text-[11px] text-primary font-bold m-0 truncate mt-0.5">
+                              <p className="text-[11px] text-primary font-black m-0 truncate mt-0.5">
                                 {QUADRANT_LABELS[p.quadrant]}
                               </p>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0 ml-2">
-                            <span className="text-xs text-slate-600 dark:text-slate-400 font-bold">
+                            <span className="text-xs text-[#4a4455] font-black">
                               {formatLocalDate(p.date)}
                             </span>
                             {p.type === 'resolved' ? (
