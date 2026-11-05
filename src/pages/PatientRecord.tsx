@@ -182,16 +182,16 @@ export default function PatientRecord() {
   const renderTabButton = (tab: Tab, label: string, Icon: any) => (
     <button
       onClick={() => setActiveTab(tab)}
-      className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-xs md:text-sm transition-all duration-300 relative ${
+      className={`flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl md:rounded-full font-black text-xs md:text-sm transition-all duration-200 relative cursor-pointer select-none ${
         activeTab === tab
-          ? 'bg-primary text-on-primary font-bold shadow-md shadow-primary/20 scale-[1.02]'
-          : 'bg-surface-container-lowest/80 text-on-surface-variant hover:bg-surface-container hover:text-on-surface border border-outline-variant/40'
-      }`}
+          ? 'bg-primary text-white shadow-md shadow-primary/20 scale-[1.02]'
+          : 'bg-white text-[#131b2e] hover:bg-slate-100 hover:text-black border-2 border-slate-200 shadow-2xs'
+      } ${tab === 'grooming' ? 'col-span-2 sm:col-span-1 md:col-span-auto' : ''}`}
     >
-      <Icon className="w-4 h-4" />
-      <span>{label}</span>
+      <Icon className="w-4 h-4 shrink-0" />
+      <span className="truncate">{label}</span>
       {activeTab === tab && (
-        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white" />
+        <span className="hidden md:block absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-white" />
       )}
     </button>
   );
@@ -398,6 +398,21 @@ export default function PatientRecord() {
         </section>
 
         {/* ========================================================
+            BARRA DE NAVEGACIÓN DE PESTAÑAS (ANTES DE LA PARTE INFORMATIVA):
+            - Desktop (md+): En línea recta horizontal continua
+            - Móvil (<md): Cuadrícula minimalista limpia
+            ======================================================== */}
+        <nav className="grid grid-cols-2 sm:grid-cols-4 md:flex md:flex-row md:items-center md:flex-nowrap gap-2 py-1 print:hidden w-full">
+          {renderTabButton('activity', 'Actividad', Activity)}
+          {renderTabButton('history', 'Historia Clínica', FileText)}
+          {renderTabButton('vaccines', 'Vacunas', Syringe)}
+          {renderTabButton('surgeries', 'Cirugías', Scissors)}
+          {renderTabButton('labs', 'Laboratorio', TestTube)}
+          {renderTabButton('prescriptions', 'Recetas', Pill)}
+          {renderTabButton('grooming', 'Peluquería', Scissors)}
+        </nav>
+
+        {/* ========================================================
             BENTO CARD 2: MAPA ANATÓMICO Y MEMORIA CLÍNICA INTEGRADA
             ======================================================== */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 print:hidden">
@@ -423,18 +438,8 @@ export default function PatientRecord() {
         </div>
 
         {/* ========================================================
-            BENTO CARD 3: NAVEGACIÓN Y CONTENIDO DE PESTAÑAS CLÍNICAS
+            BENTO CARD 3: CONTENIDO DE PESTAÑAS CLÍNICAS
             ======================================================== */}
-        <nav className="flex flex-wrap gap-2 py-1 print:hidden w-full overflow-x-auto">
-          {renderTabButton('activity', 'Actividad', Activity)}
-          {renderTabButton('history', 'Historia Clínica', FileText)}
-          {renderTabButton('vaccines', 'Vacunas', Syringe)}
-          {renderTabButton('surgeries', 'Cirugías', Scissors)}
-          {renderTabButton('labs', 'Laboratorio', TestTube)}
-          {renderTabButton('prescriptions', 'Recetas', Pill)}
-          {renderTabButton('grooming', 'Peluquería', Scissors)}
-        </nav>
-
         <section className="rounded-[32px] bg-surface-container-lowest/85 backdrop-blur-xl border border-surface-container-high p-6 md:p-8 min-h-[420px] shadow-sm print:p-0 print:border-none print:shadow-none print:bg-white print:w-full">
           {activeTab === 'activity' && (
              <ActivityTimeline patientId={patient.id} />

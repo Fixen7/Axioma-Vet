@@ -457,11 +457,11 @@ export function AnatomicalBodyMap({
               ) : (
                 /* REGISTRO ACUMULADO PUNTO POR PUNTO (ALTO CONTRASTE ABSOLUTO) */
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1.5">
                     <span className="text-xs font-black uppercase tracking-wider text-[#131b2e]">
                       Cuadrantes con Registros ({visiblePoints.length})
                     </span>
-                    <span className="text-xs text-[#4a4455] font-bold">
+                    <span className="text-[11px] text-[#4a4455] font-bold">
                       Haz clic en un punto para inspeccionar
                     </span>
                   </div>
