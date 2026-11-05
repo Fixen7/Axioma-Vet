@@ -19,7 +19,7 @@ import { AnatomicalBodyMap } from '../components/patient/AnatomicalBodyMap';
 import { calculateAge } from '../utils/date';
 import { ClinicalMemoryCard } from '../components/patient/ClinicalMemoryCard';
 import { buildClinicalMemory, type ClinicalMemoryAnalysis } from '../utils/clinicalMemory';
-import type { Consultation, Prescription, WeightRecord } from '../services/types';
+import type { Consultation, Prescription, WeightRecord, Surgery } from '../services/types';
 
 type Tab = 'activity' | 'history' | 'vaccines' | 'surgeries' | 'labs' | 'prescriptions' | 'grooming';
 
@@ -42,6 +42,7 @@ export default function PatientRecord() {
   const [cachedConsultations, setCachedConsultations] = useState<Consultation[]>([]);
   const [cachedPrescriptions, setCachedPrescriptions] = useState<Prescription[]>([]);
   const [cachedWeights, setCachedWeights] = useState<WeightRecord[]>([]);
+  const [cachedSurgeries, setCachedSurgeries] = useState<Surgery[]>([]);
 
   const [statusForm, setStatusForm] = useState<{ status: string, behaviorObservation: string }>({
     status: 'NORMAL',
@@ -50,7 +51,7 @@ export default function PatientRecord() {
 
   const patient = patients.find(p => p.id === id);
 
-  const { getConsultations, getPrescriptions, getWeightRecords, updatePatient, saveWeightRecord } = useVetContext();
+  const { getConsultations, getPrescriptions, getWeightRecords, getSurgeries, updatePatient, saveWeightRecord } = useVetContext();
   const [clinicalMemory, setClinicalMemory] = useState<ClinicalMemoryAnalysis>({
     weightDelta: null,
     pendingControl: null,
@@ -72,10 +73,11 @@ export default function PatientRecord() {
 
     const loadMemoryData = async () => {
       try {
-        const [consultationsData, prescriptionsData, weightsData] = await Promise.all([
+        const [consultationsData, prescriptionsData, weightsData, surgeriesData] = await Promise.all([
           getConsultations(id),
           getPrescriptions(id),
-          getWeightRecords(id)
+          getWeightRecords(id),
+          getSurgeries(id)
         ]);
 
         if (!isMounted) return;
@@ -83,6 +85,7 @@ export default function PatientRecord() {
         setCachedConsultations(consultationsData);
         setCachedPrescriptions(prescriptionsData);
         setCachedWeights(weightsData);
+        setCachedSurgeries(surgeriesData);
 
         const memory = buildClinicalMemory(patient, consultationsData, prescriptionsData, weightsData);
         setClinicalMemory(memory);
@@ -404,6 +407,7 @@ export default function PatientRecord() {
             <AnatomicalBodyMap 
               patient={patient} 
               consultations={cachedConsultations} 
+              surgeries={cachedSurgeries}
             />
           </div>
 

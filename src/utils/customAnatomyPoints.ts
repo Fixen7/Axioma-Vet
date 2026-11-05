@@ -36,6 +36,7 @@ export interface CustomAnatomicalPoint {
 }
 
 const STORAGE_KEY_PREFIX = 'axioma_vet_anatomy_points_';
+export const ANATOMY_UPDATE_EVENT = 'axioma_vet_anatomy_updated';
 
 /**
  * Detecta automáticamente el cuadrante anatómico según las coordenadas relativas
@@ -74,9 +75,56 @@ export function saveCustomAnatomyPoints(patientId: string, points: CustomAnatomi
   if (!patientId || typeof window === 'undefined') return;
   try {
     localStorage.setItem(`${STORAGE_KEY_PREFIX}${patientId}`, JSON.stringify(points));
+    window.dispatchEvent(new CustomEvent(ANATOMY_UPDATE_EVENT, { detail: { patientId } }));
   } catch (err) {
     console.error('Error al guardar puntos anatómicos personalizados:', err);
   }
+}
+
+/**
+ * Obtiene estrictamente la suma acumulada de los puntos que pertenecen
+ * a consultas o cirugías reales del paciente, descartando huérfanos.
+ */
+export function getAccumulatedPointsForPatient(
+  patientId: string,
+  validConsultationIds?: string[],
+  validSurgeryIds?: string[]
+): CustomAnatomicalPoint[] {
+  const all = getCustomAnatomyPoints(patientId);
+
+  // Filtrado base: Solo puntos con origen comprobable de consulta o cirugía
+  let validPoints = all.filter(p => 
+    (p.sourceType === 'consultation' || p.sourceType === 'surgery') && 
+    Boolean(p.sourceId)
+  );
+
+  // Si se proveen listas de IDs activos de consultas o cirugías, validar que la fuente aún exista
+  if (validConsultationIds !== undefined || validSurgeryIds !== undefined) {
+    const consultSet = new Set(validConsultationIds || []);
+    const surgerySet = new Set(validSurgeryIds || []);
+
+    validPoints = validPoints.filter(p => {
+      if (p.sourceType === 'consultation') {
+        return consultSet.has(p.sourceId || '');
+      }
+      if (p.sourceType === 'surgery') {
+        return surgerySet.has(p.sourceId || '');
+      }
+      return false;
+    });
+
+    // Purgar puntos obsoletos o huérfanos del almacenamiento para mantenerlo limpio
+    if (validPoints.length !== all.length) {
+      saveCustomAnatomyPoints(patientId, validPoints);
+    }
+  }
+
+  // Ordenar por fecha descendente (los más recientes primero)
+  return validPoints.sort((a, b) => {
+    const dateA = new Date(a.date).getTime();
+    const dateB = new Date(b.date).getTime();
+    return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+  });
 }
 
 /**
@@ -99,8 +147,12 @@ export function syncPointsForSource(
   newPointsForSource: Omit<CustomAnatomicalPoint, 'id' | 'patientId' | 'sourceType' | 'sourceId' | 'sourceTitle' | 'date'>[]
 ): void {
   const all = getCustomAnatomyPoints(patientId);
-  // Mantener los puntos de otras fuentes
-  const others = all.filter(p => p.sourceId !== sourceId);
+  // Mantener los puntos de otras fuentes (solo consultas y cirugías válidas)
+  const others = all.filter(p => 
+    p.sourceId !== sourceId && 
+    (p.sourceType === 'consultation' || p.sourceType === 'surgery') &&
+    Boolean(p.sourceId)
+  );
 
   const formatted: CustomAnatomicalPoint[] = newPointsForSource.map((p, idx) => ({
     ...p,
