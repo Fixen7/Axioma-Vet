@@ -16,6 +16,9 @@ import type { Patient, Consultation, Surgery } from '../../services/types';
 import { useVetContext } from '../../context/VetContext';
 import { 
   getAccumulatedPointsForPatient,
+  syncPointsForSource,
+  getPointsBySource,
+  extractAnatomyPointsFromText,
   ANATOMY_UPDATE_EVENT,
   type CustomAnatomicalPoint, 
   type PointSeverity,
@@ -62,12 +65,47 @@ export function AnatomicalBodyMap({
       let consults = initialConsultations;
       let surgs = initialSurgeries;
 
-      if (!consults && getConsultations) {
+      if ((!consults || consults.length === 0) && getConsultations) {
         consults = await getConsultations(patient.id);
       }
-      if (!surgs && getSurgeries) {
+      if ((!surgs || surgs.length === 0) && getSurgeries) {
         surgs = await getSurgeries(patient.id);
       }
+
+      // Re-hidratar automáticamente desde observaciones de la base de datos si existieran
+      (consults || []).forEach(c => {
+        const dbPoints = extractAnatomyPointsFromText(c.observation);
+        if (dbPoints && dbPoints.length > 0) {
+          const local = getPointsBySource(patient.id, c.id);
+          if (local.length === 0) {
+            syncPointsForSource(
+              patient.id,
+              'consultation',
+              c.id,
+              `Consulta: ${c.reason} (${c.diagnosis.slice(0, 30)})`,
+              c.createdAt,
+              dbPoints
+            );
+          }
+        }
+      });
+
+      (surgs || []).forEach(s => {
+        const dbPoints = extractAnatomyPointsFromText(s.observations);
+        if (dbPoints && dbPoints.length > 0) {
+          const local = getPointsBySource(patient.id, s.id);
+          if (local.length === 0) {
+            syncPointsForSource(
+              patient.id,
+              'surgery',
+              s.id,
+              `Cirugía: ${s.procedure}`,
+              s.date,
+              dbPoints
+            );
+          }
+        }
+      });
 
       const validConsultIds = (consults || []).map(c => c.id);
       const validSurgIds = (surgs || []).map(s => s.id);

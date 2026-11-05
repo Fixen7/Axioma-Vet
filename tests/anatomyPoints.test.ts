@@ -4,7 +4,10 @@ import {
   getAccumulatedPointsForPatient, 
   syncPointsForSource, 
   removePointsForSource,
-  getCustomAnatomyPoints 
+  getCustomAnatomyPoints,
+  embedAnatomyPointsInText,
+  extractAnatomyPointsFromText,
+  stripAnatomyMeta
 } from '../src/utils/customAnatomyPoints';
 
 describe('Custom Anatomy Points & Cumulative Summary Tests', () => {
@@ -62,11 +65,27 @@ describe('Custom Anatomy Points & Cumulative Summary Tests', () => {
     });
   });
 
-  describe('Suma acumulada y filtrado estricto por historia clínica y cirugías', () => {
+  describe('Persistencia y codificación en texto (Base de Datos sin migración)', () => {
+    it('debe incrustar y extraer marcas anatómicas en observaciones clínicas', () => {
+      const originalText = 'Paciente presenta dolor y ligera claudicación.';
+      const samplePoints = [{ x: 25, y: 35, quadrant: 'cranial', label: 'Dolor oreja', type: 'problem' }];
+
+      const textWithMeta = embedAnatomyPointsInText(originalText, samplePoints);
+      expect(textWithMeta).toContain('<!--ANATOMY_POINTS:');
+
+      const extracted = extractAnatomyPointsFromText(textWithMeta);
+      expect(extracted).not.toBeNull();
+      expect(extracted?.[0].label).toBe('Dolor oreja');
+
+      const cleaned = stripAnatomyMeta(textWithMeta);
+      expect(cleaned).toBe(originalText);
+    });
+  });
+
+  describe('Suma acumulada y no purgado destructivo en lectura', () => {
     const patientId = 'patient_123';
 
     it('debe acumular puntos de varias consultas y cirugías', () => {
-      // Consulta 1
       syncPointsForSource(
         patientId,
         'consultation',
@@ -76,7 +95,6 @@ describe('Custom Anatomy Points & Cumulative Summary Tests', () => {
         [{ x: 20, y: 30, quadrant: 'cranial', label: 'Otitis', type: 'problem' }]
       );
 
-      // Consulta 2
       syncPointsForSource(
         patientId,
         'consultation',
@@ -86,7 +104,6 @@ describe('Custom Anatomy Points & Cumulative Summary Tests', () => {
         [{ x: 45, y: 50, quadrant: 'thoracic', label: 'Soplo', type: 'observation' }]
       );
 
-      // Cirugía
       syncPointsForSource(
         patientId,
         'surgery',
@@ -103,31 +120,22 @@ describe('Custom Anatomy Points & Cumulative Summary Tests', () => {
       expect(accumulated.map(p => p.label)).toContain('Incisión OVH');
     });
 
-    it('debe descartar puntos huérfanos que no pertenezcan a consultas o cirugías activas', () => {
-      // Punto válido de consulta existente
+    it('NO debe purgar ni borrar puntos si la lista de consultas aún no ha terminado de cargar', () => {
       syncPointsForSource(
         patientId,
         'consultation',
-        'c_active',
-        'Consulta Activa',
+        'c_saved',
+        'Consulta Guardada',
         '2026-10-01T10:00:00Z',
-        [{ x: 20, y: 30, quadrant: 'cranial', label: 'Punto Válido', type: 'problem' }]
+        [{ x: 20, y: 30, quadrant: 'cranial', label: 'Punto Importante', type: 'problem' }]
       );
 
-      // Punto huérfano con ID de consulta que ya no existe en el registro médico
-      syncPointsForSource(
-        patientId,
-        'consultation',
-        'c_deleted',
-        'Consulta Borrada',
-        '2026-09-01T10:00:00Z',
-        [{ x: 30, y: 30, quadrant: 'cranial', label: 'Punto Fantasma', type: 'problem' }]
-      );
+      // Si se invoca con arrays vacíos (mientras carga la página), los puntos NO se deben borrar
+      const pointsWhileLoading = getAccumulatedPointsForPatient(patientId, [], []);
+      expect(pointsWhileLoading.length).toBe(1);
 
-      // Solo pasamos c_active como ID válido
-      const validPoints = getAccumulatedPointsForPatient(patientId, ['c_active'], []);
-      expect(validPoints.length).toBe(1);
-      expect(validPoints[0].label).toBe('Punto Válido');
+      // Verificar que siguen existiendo en el storage
+      expect(getCustomAnatomyPoints(patientId).length).toBe(1);
     });
 
     it('debe limpiar los puntos al eliminar una consulta con removePointsForSource', () => {

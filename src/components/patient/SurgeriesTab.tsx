@@ -9,7 +9,10 @@ import {
   syncPointsForSource, 
   removePointsForSource, 
   getPointsBySource,
-  QUADRANT_LABELS 
+  QUADRANT_LABELS,
+  embedAnatomyPointsInText,
+  extractAnatomyPointsFromText,
+  stripAnatomyMeta 
 } from '../../utils/customAnatomyPoints';
 
 export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isDeceased: boolean }) {
@@ -39,6 +42,25 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
   const loadSurgeries = async () => {
     setIsLoading(true);
     const data = await getSurgeries(patientId);
+
+    // Re-hidratar marcas anatómicas desde la base de datos si no estuvieran en local
+    data.forEach(s => {
+      const dbPoints = extractAnatomyPointsFromText(s.observations);
+      if (dbPoints && dbPoints.length > 0) {
+        const local = getPointsBySource(patientId, s.id);
+        if (local.length === 0) {
+          syncPointsForSource(
+            patientId,
+            'surgery',
+            s.id,
+            `Cirugía: ${s.procedure}`,
+            s.date,
+            dbPoints
+          );
+        }
+      }
+    });
+
     setSurgeries(data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     setIsLoading(false);
   };
@@ -58,10 +80,13 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
       return;
     }
 
+    const observationsWithMeta = embedAnatomyPointsInText(formData.observations || '', draftAnatomyPoints);
+
     const saved = await saveSurgery({
       id: editId || undefined,
       patientId,
       ...formData,
+      observations: observationsWithMeta,
       date: toUTCDateTime(formData.date),
       nextControl: formData.nextControl || undefined
     });
@@ -101,13 +126,20 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
       reason: surgery.reason,
       veterinarian: surgery.veterinarian,
       anesthesia: surgery.anesthesia,
-      observations: surgery.observations || '',
+      observations: stripAnatomyMeta(surgery.observations),
       evolutionResult: surgery.evolutionResult || '',
       nextControl: surgery.nextControl || ''
     });
     setEditId(surgery.id);
 
-    const existingPoints = getPointsBySource(patientId, surgery.id);
+    let existingPoints = getPointsBySource(patientId, surgery.id);
+    if (existingPoints.length === 0) {
+      const dbPoints = extractAnatomyPointsFromText(surgery.observations);
+      if (dbPoints && dbPoints.length > 0) {
+        existingPoints = dbPoints as any;
+      }
+    }
+
     setDraftAnatomyPoints(existingPoints);
     setShowAnatomySection(existingPoints.length > 0);
 
@@ -149,7 +181,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
   return (
     <div className="flex flex-col gap-8">
       <div className="flex justify-between items-center">
-        <h3 className="font-headline-lg m-0">Historial de Cirugías</h3>
+        <h3 className="font-headline-lg m-0 text-on-surface">Historial de Cirugías</h3>
         {!isDeceased && !isAdding && (
           <Button variant="primary" onClick={() => { setEditId(null); setDraftAnatomyPoints([]); setShowAnatomySection(false); setIsAdding(true); }}>
             <PlusCircle className="w-5 h-5" /> Nueva Cirugía
@@ -169,7 +201,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
                 name="procedure" 
                 value={formData.procedure} 
                 onChange={handleChange}
-                className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none"
+                className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none text-on-surface"
                 placeholder="Ej. Ovariohisterectomía, Osteosíntesis..."
               />
             </div>
@@ -180,7 +212,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
                 name="reason" 
                 value={formData.reason} 
                 onChange={handleChange}
-                className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none"
+                className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none text-on-surface"
                 placeholder="Ej. Electiva, Trauma..."
               />
             </div>
@@ -195,7 +227,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
                 value={formData.date} 
                 onChange={handleChange}
                 disabled={!!editId}
-                className={`w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none ${editId ? 'opacity-70 cursor-not-allowed' : ''}`}
+                className={`w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none ${editId ? 'opacity-70 cursor-not-allowed' : ''} text-on-surface`}
               />
             </div>
             <div className="flex flex-col gap-2">
@@ -205,7 +237,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
                 name="veterinarian" 
                 value={formData.veterinarian} 
                 onChange={handleChange}
-                className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none"
+                className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none text-on-surface"
                 placeholder="Ej. Dr. Juan, Dra. Ana"
               />
             </div>
@@ -216,7 +248,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
                 name="nextControl" 
                 value={formData.nextControl} 
                 onChange={handleChange}
-                className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none"
+                className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none text-on-surface"
               />
             </div>
           </div>
@@ -228,7 +260,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
               name="anesthesia" 
               value={formData.anesthesia} 
               onChange={handleChange}
-              className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none"
+              className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none text-on-surface"
               placeholder="Ej. Inhalatoria (Isoflurano), Propofol..."
             />
           </div>
@@ -238,13 +270,13 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
             <button
               type="button"
               onClick={() => setShowAnatomySection(prev => !prev)}
-              className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-primary/30 bg-primary/5 text-primary text-xs font-semibold hover:bg-primary/10 transition-colors cursor-pointer"
+              className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-primary/40 bg-primary/5 text-primary text-xs font-bold hover:bg-primary/10 transition-colors cursor-pointer"
             >
               <span className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
                 <span>Marcar Cuadrantes / Zonas Quirúrgicas ({draftAnatomyPoints.length} marcados)</span>
               </span>
-              <span className="text-[11px] underline">
+              <span className="text-[11px] underline font-bold">
                 {showAnatomySection ? 'Ocultar silueta' : 'Abrir silueta anatómica ▾'}
               </span>
             </button>
@@ -255,7 +287,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
                 points={draftAnatomyPoints}
                 onChange={setDraftAnatomyPoints}
                 title="Zonas Anatómicas / Incisiones de la Cirugía"
-                hint="Haz clic en la silueta para fijar la zona intervenida e indicar su cuadrante"
+                hint="Haz clic en cualquier parte de la silueta para fijar la zona intervenida e indicar su cuadrante"
               />
             )}
           </div>
@@ -267,7 +299,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
               value={formData.evolutionResult} 
               onChange={handleChange}
               rows={2}
-              className="w-full p-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none resize-none"
+              className="w-full p-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none resize-none text-on-surface font-medium"
               placeholder="Estado al alta, complicaciones, recuperación..."
             />
           </div>
@@ -279,7 +311,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
               value={formData.observations} 
               onChange={handleChange}
               rows={3}
-              className="w-full p-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none resize-none"
+              className="w-full p-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none resize-none text-on-surface font-medium"
               placeholder="Hallazgos intraoperatorios, material utilizado..."
             />
           </div>
@@ -299,13 +331,20 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
       ) : (
         <div className="flex flex-col gap-4">
           {surgeries.map(surgery => {
-            const surgeryPoints = getPointsBySource(patientId, surgery.id);
+            let surgeryPoints = getPointsBySource(patientId, surgery.id);
+            if (surgeryPoints.length === 0) {
+              const dbPoints = extractAnatomyPointsFromText(surgery.observations);
+              if (dbPoints && dbPoints.length > 0) {
+                surgeryPoints = dbPoints as any;
+              }
+            }
+
             return (
               <article key={surgery.id} className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 flex flex-col gap-4 hover:border-primary/30 transition-colors">
                 <div className="flex justify-between items-start border-b border-surface-variant pb-4 mb-4">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-label-caps tracking-widest text-primary uppercase">{surgery.procedure}</span>
+                      <span className="font-label-caps tracking-widest text-primary uppercase font-bold">{surgery.procedure}</span>
                       {surgeryPoints.length > 0 && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                           <MapPin className="w-3 h-3" /> {surgeryPoints.length} {surgeryPoints.length === 1 ? 'cuadrante' : 'cuadrantes'}
@@ -325,12 +364,12 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
                     </span>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-2 text-outline bg-surface-container-high px-3 py-1 rounded-full font-label-sm">
+                    <div className="flex items-center gap-2 text-outline bg-surface-container-high px-3 py-1 rounded-full font-label-sm font-semibold">
                       <User className="w-4 h-4" />
                       {surgery.veterinarian}
                     </div>
                     {surgery.nextControl && (
-                      <div className="bg-primary-container/10 text-primary border border-primary-container/20 px-3 py-1 rounded-full font-label-sm">
+                      <div className="bg-primary-container/10 text-primary border border-primary-container/20 px-3 py-1 rounded-full font-label-sm font-bold">
                         Control: {formatLocalDate(surgery.nextControl)}
                       </div>
                     )}
@@ -357,26 +396,28 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                   <div className="flex flex-col gap-1">
-                    <h5 className="font-label-md text-on-surface-variant m-0 uppercase">Motivo</h5>
-                    <p className="font-body-md text-on-surface m-0">{surgery.reason}</p>
+                    <h5 className="font-label-md text-on-surface-variant m-0 uppercase font-bold">Motivo</h5>
+                    <p className="font-body-md text-on-surface m-0 font-medium">{surgery.reason}</p>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <h5 className="font-label-md text-on-surface-variant m-0 uppercase flex items-center gap-1">
+                    <h5 className="font-label-md text-on-surface-variant m-0 uppercase flex items-center gap-1 font-bold">
                       <Activity className="w-4 h-4" /> Anestesia
                     </h5>
-                    <p className="font-body-md text-on-surface m-0">{surgery.anesthesia}</p>
+                    <p className="font-body-md text-on-surface m-0 font-medium">{surgery.anesthesia}</p>
                   </div>
                 </div>
                 
                 <div className="flex flex-col gap-1 mt-2 bg-surface-container-low p-4 rounded-xl border border-outline-variant/50">
-                  <h5 className="font-label-md text-on-surface-variant m-0 uppercase">Evolución y Resultado</h5>
-                  <p className="font-body-md text-on-surface m-0 whitespace-pre-wrap">{surgery.evolutionResult}</p>
+                  <h5 className="font-label-md text-on-surface-variant m-0 uppercase font-bold">Evolución y Resultado</h5>
+                  <p className="font-body-md text-on-surface m-0 whitespace-pre-wrap font-medium">{surgery.evolutionResult}</p>
                 </div>
 
                 {surgery.observations && (
                   <div className="flex flex-col gap-1">
-                    <h5 className="font-label-md text-on-surface-variant m-0 uppercase">Observaciones</h5>
-                    <p className="font-body-md text-on-surface m-0 whitespace-pre-wrap text-on-surface-variant">{surgery.observations}</p>
+                    <h5 className="font-label-md text-on-surface-variant m-0 uppercase font-bold">Observaciones</h5>
+                    <p className="font-body-md text-on-surface m-0 whitespace-pre-wrap text-on-surface-variant font-medium">
+                      {stripAnatomyMeta(surgery.observations)}
+                    </p>
                   </div>
                 )}
               </article>
