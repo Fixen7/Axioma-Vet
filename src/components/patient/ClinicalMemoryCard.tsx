@@ -14,7 +14,7 @@ export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: Cl
 
   if (isLoading) {
     return (
-      <div className="w-full bg-surface-container-lowest/80 backdrop-blur-xl border border-surface-container-high rounded-[28px] p-5 flex items-center gap-3 animate-pulse">
+      <div className="w-full bg-surface-container-lowest border border-surface-container-high rounded-[28px] p-5 flex items-center gap-3 animate-pulse">
         <div className="w-9 h-9 rounded-2xl bg-surface-container-high"></div>
         <div className="flex flex-col gap-1.5 flex-1">
           <div className="h-3.5 bg-surface-container-high rounded w-48"></div>
@@ -28,22 +28,22 @@ export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: Cl
   const hasFacts = !!weightDelta || !!pendingControl || !!lastTreatment || importantObservations.length > 0;
 
   return (
-    <div className="w-full h-full rounded-[28px] bg-surface-container-lowest/80 backdrop-blur-xl border border-surface-container-high shadow-sm overflow-hidden transition-all duration-300 flex flex-col justify-between">
+    <div className="w-full h-full rounded-[28px] bg-white dark:bg-surface-container-lowest border border-slate-200 dark:border-surface-container-high shadow-sm overflow-hidden transition-all duration-300 flex flex-col justify-between">
       
       {/* HEADER DE MEMORIA CLÍNICA */}
       <div 
         onClick={() => setIsExpanded(prev => !prev)}
-        className="px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-surface-container-high/20 transition-colors select-none border-b border-surface-container-high/60"
+        className="px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-surface-container-high/20 transition-colors select-none border-b border-slate-200 dark:border-surface-container-high/60"
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-xs">
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h3 className="font-headline-sm text-base md:text-lg text-on-surface m-0 font-bold">
+            <h3 className="font-headline-sm text-base md:text-lg text-slate-900 dark:text-white m-0 font-bold">
               Memoria Clínica
             </h3>
-            <p className="text-xs text-on-surface-variant m-0 mt-0.5">
+            <p className="text-xs text-slate-600 dark:text-slate-300 m-0 mt-0.5 font-medium">
               {hasFacts ? 'Hechos y evolución registrados' : 'Sin alertas clínicas activas'}
             </p>
           </div>
@@ -57,7 +57,7 @@ export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: Cl
                 e.stopPropagation();
                 onOpenSimilarCases();
               }}
-              className="text-xs px-2.5 py-1 rounded-xl border border-primary/30 text-primary hover:bg-primary/10 transition-colors flex items-center gap-1.5 font-medium"
+              className="text-xs px-2.5 py-1.5 rounded-xl border border-primary/40 bg-primary/5 text-primary hover:bg-primary/15 transition-colors flex items-center gap-1.5 font-bold cursor-pointer"
               title="Buscar antecedentes y casos similares en la clínica"
             >
               <Search className="w-3.5 h-3.5" />
@@ -67,7 +67,7 @@ export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: Cl
 
           <button 
             type="button"
-            className="text-on-surface-variant hover:text-on-surface p-1.5 rounded-xl hover:bg-surface-container transition-colors"
+            className="text-slate-700 dark:text-slate-300 hover:text-slate-900 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-surface-container transition-colors"
             aria-label={isExpanded ? 'Colapsar memoria' : 'Expandir memoria'}
           >
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -77,135 +77,133 @@ export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: Cl
 
       {/* CONTENIDO EXPANDIBLE */}
       {isExpanded && (
-        <div className="flex-1 p-5 flex flex-col justify-between gap-3">
+        <div className="flex-1 p-5 flex flex-col justify-between gap-3 bg-slate-50/50 dark:bg-transparent">
           {!hasFacts ? (
-            <div className="py-6 px-4 flex flex-col items-center justify-center text-center gap-2 text-xs text-on-surface-variant">
+            <div className="py-6 px-4 flex flex-col items-center justify-center text-center gap-2 text-xs text-slate-700 dark:text-slate-300">
               <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-xs mb-1"></div>
-              <p className="font-semibold text-on-surface m-0">Historial general estable.</p>
-              <p className="text-outline m-0">El paciente no presenta alertas de peso, tratamientos activos ni controles pendientes.</p>
+              <p className="font-bold text-slate-900 dark:text-white m-0 text-sm">Historial general estable.</p>
+              <p className="text-slate-600 dark:text-slate-300 m-0 font-medium">El paciente no presenta alertas de peso, tratamientos activos ni controles pendientes.</p>
               {onOpenSimilarCases && (
                 <button
                   type="button"
                   onClick={onOpenSimilarCases}
-                  className="text-primary hover:underline font-medium text-xs mt-2"
+                  className="text-primary hover:underline font-bold text-xs mt-2 cursor-pointer"
                 >
                   Consultar casos similares de la clínica &rarr;
                 </button>
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               
-              {/* 1. DELTA PONDERAL INFORMATIVO */}
+              {/* 1. DELTA PONDERAL INFORMATIVO (ALTO CONTRASTE) */}
               {weightDelta && (
-                <div className={`p-3.5 rounded-2xl border flex flex-col justify-between ${
+                <div className={`p-4 rounded-2xl border flex flex-col justify-between transition-all ${
                   weightDelta.isSignificantChange
-                    ? 'bg-amber-50/70 border-amber-300 text-amber-950 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-200 shadow-xs'
-                    : 'bg-surface-container-low/60 border-outline-variant/40 text-on-surface'
+                    ? 'bg-amber-50 border-amber-400/80 shadow-xs dark:bg-amber-950/40 dark:border-amber-700'
+                    : 'bg-white border-slate-200 dark:bg-surface-container-low dark:border-outline-variant/40'
                 }`}>
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-70 flex items-center gap-1">
+                    <div className="flex items-center justify-between mb-2.5">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
                         {weightDelta.deltaKg < 0 ? (
-                          <TrendingDown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                          <TrendingDown className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
                         ) : (
-                          <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-emerald-400 shrink-0" />
                         )}
                         Variación de Peso
                       </span>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                        weightDelta.isSignificantChange
-                          ? 'bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100'
-                          : 'bg-surface-container-high text-on-surface-variant'
-                      }`}>
+                      <span className="text-[11px] font-black px-2 py-0.5 rounded-lg bg-amber-800 text-white shadow-xs">
                         {weightDelta.deltaKg > 0 ? `+${weightDelta.deltaKg}` : weightDelta.deltaKg} kg ({weightDelta.deltaPercentage > 0 ? `+${weightDelta.deltaPercentage}` : weightDelta.deltaPercentage}%)
                       </span>
                     </div>
-                    <p className="text-xs leading-relaxed font-medium">
-                      De <strong>{weightDelta.previousWeightKg} kg</strong> ({formatLocalDate(weightDelta.previousDate)}) a <strong>{weightDelta.currentWeightKg} kg</strong> ({formatLocalDate(weightDelta.currentDate)}).
+                    <p className="text-xs leading-relaxed font-semibold text-slate-900 dark:text-slate-100 m-0">
+                      De <span className="underline decoration-amber-500 font-black">{weightDelta.previousWeightKg} kg</span> ({formatLocalDate(weightDelta.previousDate)}) a <span className="underline decoration-amber-500 font-black">{weightDelta.currentWeightKg} kg</span> ({formatLocalDate(weightDelta.currentDate)}).
                     </p>
                   </div>
                   {weightDelta.isSignificantChange && (
-                    <div className="mt-2 pt-2 border-t border-amber-200/80 dark:border-amber-800/40 text-[11px] flex items-center gap-1.5 opacity-90">
-                      <Info className="w-3.5 h-3.5 shrink-0" />
+                    <div className="mt-2.5 pt-2 border-t border-amber-300 dark:border-amber-800/60 text-xs flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-300">
+                      <Info className="w-4 h-4 shrink-0 text-amber-700 dark:text-amber-400" />
                       <span>Variación &ge; 5% registrada entre fechas.</span>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* 2. CONTROL PROGRAMADO PREVIO */}
+              {/* 2. CONTROL PROGRAMADO PREVIO (ALTO CONTRASTE) */}
               {pendingControl && (
-                <div className="p-3.5 rounded-2xl border bg-blue-50/60 border-blue-200/80 text-blue-950 dark:bg-blue-950/20 dark:border-blue-800 dark:text-blue-200 flex flex-col justify-between">
+                <div className="p-4 rounded-2xl border bg-blue-50 border-blue-400/80 shadow-xs dark:bg-blue-950/40 dark:border-blue-700 flex flex-col justify-between transition-all">
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-70 flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    <div className="flex items-center justify-between mb-2.5">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                        <Calendar className="w-4 h-4 text-blue-700 dark:text-blue-400 shrink-0" />
                         Control Previo
                       </span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-200/80 text-blue-900 dark:bg-blue-800 dark:text-blue-100">
+                      <span className="text-[11px] font-black px-2 py-0.5 rounded-lg bg-blue-800 text-white shadow-xs">
                         {formatLocalDate(pendingControl.scheduledControlDate)}
                       </span>
                     </div>
-                    <p className="text-xs leading-relaxed">
-                      Programado en consulta del {formatLocalDate(pendingControl.originConsultationDate)} sin consulta posterior a esa fecha.
+                    <p className="text-xs leading-relaxed font-semibold text-slate-900 dark:text-slate-100 m-0">
+                      Programado en consulta del <span className="font-black text-blue-900 dark:text-blue-200">{formatLocalDate(pendingControl.originConsultationDate)}</span> sin registro de consulta posterior a esa fecha.
                     </p>
                   </div>
-                  <div className="mt-2 pt-2 border-t border-blue-200/60 dark:border-blue-800/40 text-[11px] flex items-center gap-1.5 opacity-90">
-                    <Info className="w-3.5 h-3.5 shrink-0" />
+                  <div className="mt-2.5 pt-2 border-t border-blue-300 dark:border-blue-800/60 text-xs flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-300">
+                    <Info className="w-4 h-4 shrink-0 text-blue-700 dark:text-blue-400" />
                     <span>Control clínico pendiente de atención.</span>
                   </div>
                 </div>
               )}
 
-              {/* 3. ÚLTIMO TRATAMIENTO REGISTRADO */}
+              {/* 3. ÚLTIMO TRATAMIENTO REGISTRADO (ALTO CONTRASTE) */}
               {lastTreatment && (
-                <div className="p-3.5 rounded-2xl border bg-surface-container-low/60 border-outline-variant/40 text-on-surface flex flex-col justify-between">
+                <div className="p-4 rounded-2xl border bg-white border-slate-200 shadow-xs dark:bg-surface-container-low dark:border-outline-variant/40 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-70 flex items-center gap-1">
-                        <Pill className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <Pill className="w-4 h-4 text-primary shrink-0" />
                         Último Tratamiento
                       </span>
                     </div>
                     {lastTreatment.hasStructuredPrescription && lastTreatment.prescriptionDetails && (
-                      <div className="text-xs mb-1.5">
-                        <span className="text-[10px] font-semibold text-primary block uppercase">Receta ({formatLocalDate(lastTreatment.prescriptionDetails.date)})</span>
-                        <strong className="text-on-surface">{lastTreatment.prescriptionDetails.medication}</strong> - {lastTreatment.prescriptionDetails.dosage}
+                      <div className="text-xs mb-2">
+                        <span className="text-[10px] font-bold text-primary block uppercase tracking-wider">Receta ({formatLocalDate(lastTreatment.prescriptionDetails.date)})</span>
+                        <strong className="text-slate-900 dark:text-white font-bold">{lastTreatment.prescriptionDetails.medication}</strong> - <span className="text-slate-700 dark:text-slate-300 font-medium">{lastTreatment.prescriptionDetails.dosage}</span>
                       </div>
                     )}
                     {lastTreatment.hasFreeTextTreatment && lastTreatment.freeTextTreatment && (
                       <div className="text-xs">
-                        <span className="text-[10px] font-semibold text-outline block uppercase">Anotación ({formatLocalDate(lastTreatment.freeTextTreatment.date)})</span>
-                        <p className="line-clamp-2 text-on-surface-variant italic mt-0.5">"{lastTreatment.freeTextTreatment.text}"</p>
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 block uppercase tracking-wider">Anotación ({formatLocalDate(lastTreatment.freeTextTreatment.date)})</span>
+                        <p className="line-clamp-2 text-slate-800 dark:text-slate-200 font-medium italic mt-1 bg-slate-50 dark:bg-surface-container p-2 rounded-xl border border-slate-200/60 dark:border-outline-variant/30">
+                          "{lastTreatment.freeTextTreatment.text}"
+                        </p>
                       </div>
                     )}
                   </div>
-                  <div className="mt-2 pt-2 border-t border-outline-variant/30 text-[10px] text-outline">
+                  <div className="mt-2.5 pt-2 border-t border-slate-200 dark:border-outline-variant/30 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                     Documentado en visita previa.
                   </div>
                 </div>
               )}
 
-              {/* 4. OBSERVACIONES CLÍNICAS IMPORTANTES */}
+              {/* 4. OBSERVACIONES CLÍNICAS IMPORTANTES (ALTO CONTRASTE) */}
               {importantObservations.length > 0 && (
-                <div className="p-3.5 rounded-2xl border bg-surface-container-low/60 border-outline-variant/40 text-on-surface flex flex-col justify-between">
+                <div className="p-4 rounded-2xl border bg-white border-slate-200 shadow-xs dark:bg-surface-container-low dark:border-outline-variant/40 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-70 flex items-center gap-1">
-                        <AlertCircle className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <AlertCircle className="w-4 h-4 text-primary shrink-0" />
                         Observaciones Clínicas
                       </span>
                     </div>
-                    <ul className="text-xs space-y-1 text-on-surface-variant list-disc list-inside">
+                    <ul className="text-xs space-y-1.5 list-disc list-inside">
                       {importantObservations.map((obs, idx) => (
-                        <li key={idx} className="leading-relaxed">
-                          <span className="text-on-surface font-medium">{obs.text}</span>
+                        <li key={idx} className="leading-relaxed text-slate-800 dark:text-slate-200 font-medium">
+                          <span className="text-slate-900 dark:text-white font-semibold">{obs.text}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-                  <div className="mt-2 pt-2 border-t border-outline-variant/30 text-[10px] text-outline">
+                  <div className="mt-2.5 pt-2 border-t border-slate-200 dark:border-outline-variant/30 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                     Notas de manejo documentadas.
                   </div>
                 </div>
