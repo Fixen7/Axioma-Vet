@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { telemetry } from './services/telemetry'
+import { GlobalErrorBoundary } from './components/GlobalErrorBoundary'
 
 // Inicializar telemetría centralizada
 telemetry.init({
@@ -25,8 +26,10 @@ if (typeof document !== 'undefined') {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <GlobalErrorBoundary>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </GlobalErrorBoundary>
   </StrictMode>,
 )
