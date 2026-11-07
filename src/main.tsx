@@ -3,6 +3,13 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
+import { telemetry } from './services/telemetry'
+
+// Inicializar telemetría centralizada
+telemetry.init({
+  appId: 'axioma-vet',
+  appVersion: '1.0.0'
+});
 
 // Limpieza temporal de cookies host-only antiguas (zombies) de Axioma Vet
 if (typeof document !== 'undefined') {

@@ -5,6 +5,7 @@ import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../services/supabase';
 import { getModuleAccessStatus } from '../services/coreAccessClient';
 import type { ModuleAccessStatus } from '../services/coreAccessClient';
+import { telemetry } from '../services/telemetry';
 
 interface AuthContextType {
   user: User | null;
@@ -34,6 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkContextAndSetUser = async (currentSession: Session | null) => {
     if (!currentSession) {
+      telemetry.setUser(null);
+      telemetry.setWorkspace(null);
       setSession(null);
       setUser(null);
       setCoreUser(null);
@@ -44,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      telemetry.setUser({ id: currentSession.user.id, email: currentSession.user.email });
       const coreUrl = import.meta.env.VITE_CORE_URL;
       const cachedWorkspaceId = localStorage.getItem('axioma-vet-workspace');
       const reqHeaders: Record<string, string> = {
@@ -59,8 +63,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
+        telemetry.reportAuthError('fetch_context', new Error(`HTTP ${response.status} en /api/me/context`), { status: response.status });
         if (response.status === 401 || response.status === 403) {
           await supabase.auth.signOut();
+          telemetry.setUser(null);
+          telemetry.setWorkspace(null);
           setSession(null);
           setUser(null);
           setCoreUser(null);
@@ -86,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const activeOrg = data.organization || (Array.isArray(data.organizations) && data.organizations.length > 0 ? data.organizations[0] : null);
       if (activeOrg?.id) {
         localStorage.setItem('axioma-vet-workspace', activeOrg.id);
+        telemetry.setWorkspace(activeOrg.id);
       }
 
       let vetAccessStatus = null;
@@ -97,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           hasVetAccess = !!vetAccessStatus?.access?.allowed;
         } catch (e) {
           // Si Core falla, denegamos el acceso por seguridad (no hacer fallback ciego)
+          telemetry.reportAuthError('getModuleAccessStatus', e, { orgId: activeOrg.id });
           hasVetAccess = false;
         }
       }
@@ -110,6 +119,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentSession.user);
       } else {
         setAccessDenied(true);
+        telemetry.track('Acceso a Axioma Vet no habilitado para la organización', {
+          category: 'auth',
+          severity: 'warning',
+          context: { orgId: activeOrg?.id, orgName: activeOrg?.name }
+        });
         setActiveWorkspaceId(activeOrg?.id || null);
         setActiveWorkspace(activeOrg ? { id: activeOrg.id, name: activeOrg.name } : null);
         setModuleAccess(vetAccessStatus);
@@ -118,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (e) {
       console.error(e);
+      telemetry.reportAuthError('checkContextAndSetUser_exception', e);
       setAccessDenied(true);
       setSession(null);
       setUser(null);
@@ -166,9 +181,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 await checkContextAndSetUser(data.session);
               }
               return;
+            } else {
+              telemetry.reportAuthError('pkce_exchange_failed', new Error(`HTTP ${res.status} en exchange de PKCE`), { ticket });
             }
           } catch (e) {
             console.error('Error in PKCE exchange', e);
+            telemetry.reportAuthError('pkce_exchange_exception', e, { ticket });
           }
         }
         sessionStorage.removeItem('pkce_verifier');
