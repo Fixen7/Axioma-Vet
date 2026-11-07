@@ -5,6 +5,8 @@ import { useVetContext } from '../../context/VetContext';
 import type { Surgery } from '../../services/types';
 import { getLocalDatetimeString, formatLocalDate, toUTCDateTime } from '../../utils/date';
 import { AnatomyMarkerEditor, type DraftAnatomyPoint } from './AnatomyMarkerEditor';
+import { useDraftAutosave } from '../../hooks/useDraftAutosave';
+import { getDraftStorageKey } from '../../utils/formDraftStorage';
 import { 
   syncPointsForSource, 
   removePointsForSource, 
@@ -38,6 +40,33 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
     evolutionResult: '',
     nextControl: ''
   });
+
+  // Autoguardado de borrador en sessionStorage
+  const draftKey = getDraftStorageKey('surgery', patientId);
+  const { pendingDraft, lastSavedAt, discardDraft, clearDraft } = useDraftAutosave({
+    key: draftKey,
+    data: { formData, draftAnatomyPoints },
+    enabled: isAdding && !editId,
+    patientId,
+    debounceMs: 600,
+    isDataEmpty: (d) =>
+      !d.formData.procedure.trim() &&
+      !d.formData.reason.trim() &&
+      !d.formData.anesthesia.trim() &&
+      !d.formData.observations.trim() &&
+      d.draftAnatomyPoints.length === 0,
+  });
+
+  const handleRestoreDraft = () => {
+    if (!pendingDraft) return;
+    setFormData(pendingDraft.data.formData);
+    setDraftAnatomyPoints(pendingDraft.data.draftAnatomyPoints || []);
+    if (pendingDraft.data.draftAnatomyPoints && pendingDraft.data.draftAnatomyPoints.length > 0) {
+      setShowAnatomySection(true);
+    }
+    setEditId(null);
+    setIsAdding(true);
+  };
 
   const loadSurgeries = async () => {
     setIsLoading(true);
@@ -102,6 +131,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
       );
     }
 
+    clearDraft();
     setIsAdding(false);
     setEditId(null);
     setDraftAnatomyPoints([]);
@@ -148,6 +178,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
   };
   
   const handleCancel = () => {
+    clearDraft();
     setIsAdding(false);
     setEditId(null);
     setDraftAnatomyPoints([]);
@@ -189,9 +220,54 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
         )}
       </div>
 
+      {/* Banner de Recuperación de Borrador Quirúrgico */}
+      {pendingDraft && !isAdding && (
+        <div className="bg-amber-950/40 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0">
+              <Scissors className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">Borrador de procedimiento quirúrgico</p>
+              <p className="text-xs text-amber-300/80">
+                Detectamos una intervención no finalizada ({pendingDraft.data.formData.procedure || 'Cirugía sin título'}). ¿Deseas recuperarla?
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button
+              type="button"
+              onClick={handleRestoreDraft}
+              className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg transition-colors cursor-pointer shadow-sm active:scale-95"
+            >
+              Recuperar borrador
+            </button>
+            <button
+              type="button"
+              onClick={discardDraft}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs rounded-lg transition-colors cursor-pointer"
+            >
+              Descartar
+            </button>
+          </div>
+        </div>
+      )}
+
       {isAdding && (
         <div className="bg-surface-container-lowest border border-primary-container p-6 rounded-2xl flex flex-col gap-6 shadow-sm">
-          <h4 className="font-headline-md m-0 text-primary">{editId ? 'Editar Cirugía' : 'Registrar Procedimiento Quirúrgico'}</h4>
+          <div className="flex items-center justify-between border-b border-surface-variant pb-3">
+            <h4 className="font-headline-md m-0 text-primary">{editId ? 'Editar Cirugía' : 'Registrar Procedimiento Quirúrgico'}</h4>
+            <div className="flex items-center gap-2">
+              {lastSavedAt && (
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                  ✓ Borrador respaldado
+                </span>
+              )}
+              <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-medium">
+                Protocolo Quirúrgico
+              </span>
+            </div>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
