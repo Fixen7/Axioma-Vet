@@ -316,7 +316,7 @@ export class SupabaseDataService implements IDataService {
     const { data: existing } = await supabase.from('global_settings').select('id').eq('workspace_id', this.getWorkspaceId()).maybeSingle();
     
     if (existing) {
-      const { error } = await supabase.from('global_settings').update(snakeData).eq('id', existing.id);
+      const { error } = await supabase.from('global_settings').update(snakeData).eq('id', existing.id).eq('workspace_id', this.getWorkspaceId());
       if (error) throw error;
     } else {
       const insertData = { ...snakeData, workspace_id: this.getWorkspaceId() };
