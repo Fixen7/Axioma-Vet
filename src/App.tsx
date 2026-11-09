@@ -1,31 +1,37 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Home from './pages/Home';
-import PatientRecord from './pages/PatientRecord';
-import SearchPatient from './pages/SearchPatient';
-import NewPatient from './pages/NewPatient';
-import UpcomingEvents from './pages/UpcomingEvents';
-import Login from './pages/Login';
 import { VetProvider } from './context/VetContext';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { BugReportWidget } from './components/BugReportWidget';
 import { GlobalErrorBoundary } from './components/GlobalErrorBoundary';
+import { RouteLoadingFallback } from './components/ui/RouteLoadingFallback';
+
+// Code-splitting por rutas para aligerar la carga inicial en móviles y tablets
+const Home = lazy(() => import('./pages/Home'));
+const Login = lazy(() => import('./pages/Login'));
+const PatientRecord = lazy(() => import('./pages/PatientRecord'));
+const SearchPatient = lazy(() => import('./pages/SearchPatient'));
+const NewPatient = lazy(() => import('./pages/NewPatient'));
+const UpcomingEvents = lazy(() => import('./pages/UpcomingEvents'));
 
 function App() {
   return (
     <AuthProvider>
       <VetProvider>
         <GlobalErrorBoundary>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-            <Route path="/patient/search" element={<ProtectedRoute><SearchPatient /></ProtectedRoute>} />
-            <Route path="/patient/new" element={<ProtectedRoute><NewPatient /></ProtectedRoute>} />
-            <Route path="/patient/edit/:id" element={<ProtectedRoute><NewPatient /></ProtectedRoute>} />
-            <Route path="/events" element={<ProtectedRoute><UpcomingEvents /></ProtectedRoute>} />
-            <Route path="/patient/:id" element={<ProtectedRoute><PatientRecord /></ProtectedRoute>} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+              <Route path="/patient/search" element={<ProtectedRoute><SearchPatient /></ProtectedRoute>} />
+              <Route path="/patient/new" element={<ProtectedRoute><NewPatient /></ProtectedRoute>} />
+              <Route path="/patient/edit/:id" element={<ProtectedRoute><NewPatient /></ProtectedRoute>} />
+              <Route path="/events" element={<ProtectedRoute><UpcomingEvents /></ProtectedRoute>} />
+              <Route path="/patient/:id" element={<ProtectedRoute><PatientRecord /></ProtectedRoute>} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
         </GlobalErrorBoundary>
         <BugReportWidget />
       </VetProvider>
@@ -34,4 +40,3 @@ function App() {
 }
 
 export default App;
-

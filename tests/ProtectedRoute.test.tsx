@@ -30,7 +30,7 @@ describe('ProtectedRoute', () => {
         </ProtectedRoute>
       </MemoryRouter>
     );
-    expect(screen.getByText(/Cargando/i)).toBeInTheDocument();
+    expect(screen.getByText(/Iniciando sesión/i)).toBeInTheDocument();
   });
 
   it('debe redirigir a /login si no hay usuario', () => {
