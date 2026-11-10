@@ -20,7 +20,9 @@ export function BugReportWidget() {
   
   const { user } = useAuth();
 
-  if (!user) return null;
+  // El widget de depuración/reporte solo debe estar visible en Staging/Development para pruebas móviles, nunca en Producción
+  const isProduction = import.meta.env.VITE_AXIOMA_ENV === 'production';
+  if (isProduction || !user) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

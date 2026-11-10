@@ -6,6 +6,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { BugReportWidget } from './components/BugReportWidget';
 import { GlobalErrorBoundary } from './components/GlobalErrorBoundary';
 import { RouteLoadingFallback } from './components/ui/RouteLoadingFallback';
+import { OrgDeletionBanner } from './components/OrgDeletionBanner';
 
 // Code-splitting por rutas para aligerar la carga inicial en móviles y tablets
 const Home = lazy(() => import('./pages/Home'));
@@ -19,6 +20,7 @@ function App() {
   return (
     <AuthProvider>
       <VetProvider>
+        <OrgDeletionBanner />
         <GlobalErrorBoundary>
           <Suspense fallback={<RouteLoadingFallback />}>
             <Routes>

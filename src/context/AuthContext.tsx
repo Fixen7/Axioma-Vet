@@ -12,7 +12,7 @@ interface AuthContextType {
   coreUser: { name: string; email: string; avatarUrl: string | null } | null;
   session: Session | null;
   activeWorkspaceId: string | null;
-  activeWorkspace: { id: string; name: string } | null;
+  activeWorkspace: { id: string; name: string; deletionScheduledAt?: string | null; deletedAt?: string | null } | null;
   moduleAccess: ModuleAccessStatus | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
@@ -124,7 +124,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (hasVetAccess && activeOrg?.id) {
         setAccessDenied(false);
         setActiveWorkspaceId(activeOrg.id);
-        setActiveWorkspace({ id: activeOrg.id, name: activeOrg.name });
+        setActiveWorkspace({ 
+          id: activeOrg.id, 
+          name: activeOrg.name,
+          deletionScheduledAt: activeOrg.deletionScheduledAt,
+          deletedAt: activeOrg.deletedAt,
+        });
         setModuleAccess(vetAccessStatus);
         setSession(currentSession);
         setUser(currentSession.user);
@@ -136,7 +141,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           context: { orgId: activeOrg?.id, orgName: activeOrg?.name }
         });
         setActiveWorkspaceId(activeOrg?.id || null);
-        setActiveWorkspace(activeOrg ? { id: activeOrg.id, name: activeOrg.name } : null);
+        setActiveWorkspace(activeOrg ? { 
+          id: activeOrg.id, 
+          name: activeOrg.name,
+          deletionScheduledAt: activeOrg.deletionScheduledAt,
+          deletedAt: activeOrg.deletedAt,
+        } : null);
         setModuleAccess(vetAccessStatus);
         setSession(currentSession);
         setUser(currentSession.user);
