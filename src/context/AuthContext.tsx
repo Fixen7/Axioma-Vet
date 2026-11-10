@@ -64,14 +64,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         telemetry.reportAuthError('fetch_context', new Error(`HTTP ${response.status} en /api/me/context`), { status: response.status });
-        if (response.status === 401 || response.status === 403) {
+        // Si Core devuelve 400 (token corrupto/invalido), 401 (no autorizado) o 403 (prohibido) tras un despliegue
+        if (response.status === 400 || response.status === 401 || response.status === 403) {
           await supabase.auth.signOut();
+          localStorage.removeItem('axioma-vet-auth');
+          localStorage.removeItem('axioma-vet-workspace');
+          sessionStorage.clear();
           telemetry.setUser(null);
           telemetry.setWorkspace(null);
           setSession(null);
           setUser(null);
           setCoreUser(null);
           setActiveWorkspace(null);
+          setModuleAccess(null);
+          setAccessDenied(false);
+          setIsLoading(false);
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login?session_expired=true';
+          }
+          return;
         }
         throw new Error('Error fetching context');
       }
@@ -133,12 +144,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.error(e);
       telemetry.reportAuthError('checkContextAndSetUser_exception', e);
-      setAccessDenied(true);
+      setAccessDenied(false);
       setSession(null);
       setUser(null);
       setCoreUser(null);
       setActiveWorkspace(null);
       setModuleAccess(null);
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login?session_expired=true';
+      }
     } finally {
       setIsLoading(false);
     }

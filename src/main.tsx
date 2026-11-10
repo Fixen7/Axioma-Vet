@@ -12,15 +12,12 @@ telemetry.init({
   appVersion: '1.0.0'
 });
 
-// Limpieza temporal de cookies host-only antiguas (zombies) de Axioma Vet
-if (typeof document !== 'undefined') {
-  document.cookie.split(';').forEach((c) => {
-    const cookieName = c.split('=')[0].trim();
-    if (cookieName.startsWith('sb-') && cookieName.includes('-auth-token')) {
-      // Al NO incluir 'domain', el navegador SOLO elimina la cookie host-only si existe.
-      // Las cookies compartidas (.axiomadynamics.com) no se ven afectadas porque requieren el domain explicito para borrarse.
-      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-    }
+// Auto-recarga transparente si el navegador intenta cargar un chunk viejo tras un nuevo despliegue
+if (typeof window !== 'undefined') {
+  window.addEventListener('vite:preloadError', (event) => {
+    console.warn('[Axioma] Nueva versión de la aplicación detectada. Actualizando interfaz...', event);
+    // Recarga fresca directamente del servidor (simula hard-reload)
+    window.location.reload();
   });
 }
 

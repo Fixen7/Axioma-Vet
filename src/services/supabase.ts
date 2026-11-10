@@ -29,6 +29,20 @@ const customFetch = async (url: RequestInfo | URL, options?: RequestInit) => {
     if (!res.ok && res.status !== 401) {
       const cloned = res.clone();
       cloned.json().then((body) => {
+        // Detectar si es un error 400 por token de refresco revocado/inválido tras un despliegue
+        const isInvalidGrant = res.status === 400 && (
+          body?.error === 'invalid_grant' ||
+          body?.message?.toLowerCase().includes('refresh token') ||
+          body?.error_description?.toLowerCase().includes('refresh token')
+        );
+
+        if (isInvalidGrant && typeof window !== 'undefined') {
+          console.warn('[Supabase] Refresh token desactualizado tras despliegue. Purgando almacenamiento local para renovación limpia...');
+          localStorage.removeItem('axioma-vet-auth');
+          localStorage.removeItem('axioma-vet-workspace');
+          return;
+        }
+
         telemetry.reportDatabaseError(`HTTP ${res.status} en ${urlStr.split('?')[0]}`, new Error(body?.message || `Error Supabase ${res.status}`), {
           status: res.status,
           statusText: res.statusText,
