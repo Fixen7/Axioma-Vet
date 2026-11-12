@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Syringe, FileText, Pill, Scissors, TestTube, Flag, MapPin } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Syringe, FileText, Pill, Scissors, TestTube, Flag, MapPin, UserCheck, PencilLine } from 'lucide-react';
 import { useVetContext } from '../../context/VetContext';
 import type { Consultation, Prescription, Vaccine, LabResult, Surgery } from '../../services/types';
 import { parseLocalDate, formatLocalDate } from '../../utils/date';
@@ -16,15 +16,29 @@ interface TimelineEvent {
   colorClass: string;
   anatomyPointsCount?: number;
   quadrants?: string[];
+  createdBy?: string | null;
+  updatedBy?: string | null;
 }
 
 export function ActivityTimeline({ patientId }: { patientId: string }) {
   const { lang, t } = useTranslation();
-  const { getConsultations, getPrescriptions, getVaccines, getLabs, getSurgeries, getGroomings, patients } = useVetContext();
+  const {
+    getConsultations,
+    getPrescriptions,
+    getVaccines,
+    getLabs,
+    getSurgeries,
+    getGroomings,
+    patients,
+    resolveMemberLabel,
+    workspaceMembers,
+  } = useVetContext();
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('all');
 
   useEffect(() => {
+    const pick = (esText: string, enText: string) => (lang === 'en' ? enText : esText);
     const quadrantLabels = getQuadrantLabels(lang);
     async function loadEvents() {
       setIsLoading(true);
@@ -49,12 +63,14 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
             id: c.id,
             type: 'consultation',
             date: parseLocalDate(c.createdAt),
-            title: `${t('Consulta', 'Consultation')}: ${c.reason}`,
-            description: c.diagnosis || t('Sin diagnóstico registrado', 'No diagnosis recorded'),
+            title: `${pick('Consulta', 'Consultation')}: ${c.reason}`,
+            description: c.diagnosis || pick('Sin diagnóstico registrado', 'No diagnosis recorded'),
             icon: FileText,
             colorClass: 'text-blue-500 border-blue-200 bg-blue-50',
             anatomyPointsCount: points.length,
-            quadrants: uniqueQuadrants
+            quadrants: uniqueQuadrants,
+            createdBy: c.createdBy,
+            updatedBy: c.updatedBy,
           });
         });
 
@@ -64,10 +80,12 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
             id: p.id,
             type: 'prescription',
             date: parseLocalDate(p.date),
-            title: t('Receta Emitida', 'Prescription Issued'),
+            title: pick('Receta Emitida', 'Prescription Issued'),
             description: `${p.medication} - ${p.dosage} (${p.duration})`,
             icon: Pill,
-            colorClass: 'text-purple-500 border-purple-200 bg-purple-50'
+            colorClass: 'text-purple-500 border-purple-200 bg-purple-50',
+            createdBy: p.createdBy,
+            updatedBy: p.updatedBy,
           });
         });
 
@@ -77,10 +95,12 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
             id: v.id,
             type: 'vaccine',
             date: parseLocalDate(v.applicationDate),
-            title: `${t('Vacuna', 'Vaccine')}: ${v.vaccineName}`,
-            description: v.observations || t('Aplicación exitosa', 'Successfully administered'),
+            title: `${pick('Vacuna', 'Vaccine')}: ${v.vaccineName}`,
+            description: v.observations || pick('Aplicación exitosa', 'Successfully administered'),
             icon: Syringe,
-            colorClass: 'text-emerald-500 border-emerald-200 bg-emerald-50'
+            colorClass: 'text-emerald-500 border-emerald-200 bg-emerald-50',
+            createdBy: v.createdBy,
+            updatedBy: v.updatedBy,
           });
         });
 
@@ -90,10 +110,12 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
             id: l.id,
             type: 'lab',
             date: parseLocalDate(l.date),
-            title: `${t('Laboratorio', 'Lab')}: ${l.examType}`,
-            description: l.result || t('Sin resultados detallados', 'No detailed results'),
+            title: `${pick('Laboratorio', 'Lab')}: ${l.examType}`,
+            description: l.result || pick('Sin resultados detallados', 'No detailed results'),
             icon: TestTube,
-            colorClass: 'text-amber-500 border-amber-200 bg-amber-50'
+            colorClass: 'text-amber-500 border-amber-200 bg-amber-50',
+            createdBy: l.createdBy,
+            updatedBy: l.updatedBy,
           });
         });
 
@@ -106,12 +128,14 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
             id: s.id,
             type: 'surgery',
             date: parseLocalDate(s.date),
-            title: `${t('Cirugía', 'Surgery')}: ${s.procedure}`,
-            description: s.evolutionResult || t('Procedimiento completado', 'Procedure completed'),
+            title: `${pick('Cirugía', 'Surgery')}: ${s.procedure}`,
+            description: s.evolutionResult || pick('Procedimiento completado', 'Procedure completed'),
             icon: Scissors,
             colorClass: 'text-rose-500 border-rose-200 bg-rose-50',
             anatomyPointsCount: points.length,
-            quadrants: uniqueQuadrants
+            quadrants: uniqueQuadrants,
+            createdBy: s.createdBy,
+            updatedBy: s.updatedBy,
           });
         });
 
@@ -121,10 +145,12 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
             id: g.id,
             type: 'grooming',
             date: parseLocalDate(g.date),
-            title: `${t('Peluquería', 'Grooming')}: ${g.service}`,
-            description: g.observations || t('Servicio realizado', 'Service completed'),
+            title: `${pick('Peluquería', 'Grooming')}: ${g.service}`,
+            description: g.observations || pick('Servicio realizado', 'Service completed'),
             icon: Scissors,
-            colorClass: 'text-cyan-500 border-cyan-200 bg-cyan-50'
+            colorClass: 'text-cyan-500 border-cyan-200 bg-cyan-50',
+            createdBy: g.createdBy,
+            updatedBy: g.updatedBy,
           });
         });
 
@@ -135,10 +161,12 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
             id: `reg-${patient.id}`,
             type: 'registration',
             date: parseLocalDate(patient.createdAt),
-            title: t('Primer Registro', 'Initial Registration'),
-            description: t('Creación del expediente médico inicial.', 'Initial medical record creation.'),
+            title: pick('Primer Registro', 'Initial Registration'),
+            description: pick('Creación del expediente médico inicial.', 'Initial medical record creation.'),
             icon: Flag,
-            colorClass: 'text-outline border-outline-variant bg-surface-container'
+            colorClass: 'text-outline border-outline-variant bg-surface-container',
+            createdBy: patient.createdBy,
+            updatedBy: patient.updatedBy,
           });
         }
 
@@ -157,7 +185,30 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
     }
 
     loadEvents();
-  }, [patientId, lang, t, getConsultations, getPrescriptions, getVaccines, getLabs, getSurgeries, getGroomings, patients]);
+  }, [patientId, lang, getConsultations, getPrescriptions, getVaccines, getLabs, getSurgeries, getGroomings, patients]);
+
+  const actorOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    workspaceMembers.forEach((m) => {
+      map.set(m.id, m.name || m.email || m.id.slice(0, 8));
+    });
+    events.forEach((e) => {
+      if (e.createdBy && !map.has(e.createdBy)) {
+        map.set(e.createdBy, resolveMemberLabel(e.createdBy));
+      }
+      if (e.updatedBy && !map.has(e.updatedBy)) {
+        map.set(e.updatedBy, resolveMemberLabel(e.updatedBy));
+      }
+    });
+    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
+  }, [workspaceMembers, events, resolveMemberLabel]);
+
+  const filteredEvents = useMemo(() => {
+    if (selectedMemberId === 'all') return events;
+    return events.filter(
+      (e) => e.createdBy === selectedMemberId || e.updatedBy === selectedMemberId
+    );
+  }, [events, selectedMemberId]);
 
   if (isLoading) {
     return <div className="py-12 flex justify-center text-outline">{t('Cargando actividad...', 'Loading activity...')}</div>;
@@ -169,13 +220,41 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
 
   return (
     <div className="flex flex-col gap-8">
-      <header className="flex justify-between items-center border-b border-outline-variant pb-6">
+      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-b border-outline-variant pb-6">
         <h3 className="font-headline-lg text-headline-lg text-on-surface m-0">{t('Historial de Actividad', 'Activity History')}</h3>
+        {actorOptions.length > 0 && (
+          <div className="flex items-center gap-2">
+            <label htmlFor="timeline-member-filter" className="text-xs font-medium text-on-surface-variant whitespace-nowrap">
+              {t('Miembro:', 'Member:')}
+            </label>
+            <select
+              id="timeline-member-filter"
+              value={selectedMemberId}
+              onChange={(e) => setSelectedMemberId(e.target.value)}
+              className="px-3 py-1.5 text-xs font-medium rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
+            >
+              <option value="all">{t('Todos', 'All')}</option>
+              {actorOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </header>
       
       <div className="relative pl-8 flex flex-col gap-12 before:content-[''] before:absolute before:left-[19px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-primary-container before:via-outline-variant before:to-transparent">
-        {events.map((event) => {
+        {filteredEvents.length === 0 ? (
+          <div className="py-8 text-sm text-outline">{t('Sin actividad registrada para este miembro.', 'No recorded activity for this member.')}</div>
+        ) : (
+          filteredEvents.map((event) => {
           const Icon = event.icon;
+          const creatorLabel = resolveMemberLabel(event.createdBy);
+          const editorLabel =
+            event.updatedBy && event.updatedBy !== event.createdBy
+              ? resolveMemberLabel(event.updatedBy)
+              : '';
           return (
             <article key={event.id} className="relative flex flex-col gap-3 group">
               <div className={`absolute -left-8 top-1 w-10 h-10 rounded-full border-2 flex items-center justify-center shadow-md z-10 group-hover:scale-110 transition-transform ${event.colorClass}`}>
@@ -207,10 +286,27 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
                     ))}
                   </div>
                 )}
+                {(creatorLabel || editorLabel) && (
+                  <div className="flex flex-wrap items-center gap-2 pt-2 mt-1 border-t border-outline-variant/40 text-[11px] text-on-surface-variant">
+                    {creatorLabel && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-medium">
+                        <UserCheck className="w-3 h-3 text-primary" />
+                        <span>{t('Registrado por:', 'Recorded by:')} {creatorLabel}</span>
+                      </span>
+                    )}
+                    {editorLabel && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 font-medium">
+                        <PencilLine className="w-3 h-3" />
+                        <span>{t('Editado por:', 'Edited by:')} {editorLabel}</span>
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </article>
           );
-        })}
+        })
+        )}
       </div>
     </div>
   );

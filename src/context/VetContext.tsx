@@ -3,13 +3,15 @@ import type { ReactNode } from 'react';
 import { SupabaseDataService } from '../services/SupabaseDataService';
 import { supabase } from '../services/supabase';
 import { useAuth } from './AuthContext';
-import type { Patient, Consultation, Prescription, Vaccine, LabResult, Surgery, PatientStatus, GlobalSettings, Grooming, WeightRecord } from '../services/types';
+import type { Patient, Consultation, Prescription, Vaccine, LabResult, Surgery, PatientStatus, GlobalSettings, Grooming, WeightRecord, WorkspaceMemberProfile } from '../services/types';
 
 const dataService = new SupabaseDataService();
 
 interface VetContextType {
   patients: Patient[];
   settings: GlobalSettings | null;
+  workspaceMembers: WorkspaceMemberProfile[];
+  resolveMemberLabel: (userId?: string | null) => string;
   loadPatients: () => Promise<void>;
   savePatient: (patient: Omit<Patient, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }) => Promise<Patient>;
   updatePatient: (id: string, updates: Partial<Patient>) => Promise<Patient>;
@@ -54,7 +56,7 @@ interface VetContextType {
 const VetContext = createContext<VetContextType | undefined>(undefined);
 
 export const VetProvider = ({ children }: { children: ReactNode }) => {
-  const { user, activeWorkspaceId, coreUser, activeWorkspace } = useAuth();
+  const { user, activeWorkspaceId, coreUser, activeWorkspace, workspaceMembers, resolveMemberLabel } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [settings, setSettings] = useState<GlobalSettings | null>(null);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
@@ -180,6 +182,8 @@ export const VetProvider = ({ children }: { children: ReactNode }) => {
     <VetContext.Provider value={{
       patients,
       settings: effectiveSettings as GlobalSettings,
+      workspaceMembers,
+      resolveMemberLabel,
       loadPatients,
       savePatient,
       updatePatient,

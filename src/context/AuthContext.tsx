@@ -7,6 +7,7 @@ import { getModuleAccessStatus } from '../services/coreAccessClient';
 import type { ModuleAccessStatus } from '../services/coreAccessClient';
 import { telemetry } from '../services/telemetry';
 import { syncCoreLanguagePreference, useTranslation } from '../i18n';
+import type { WorkspaceMemberProfile } from '../services/types';
 
 interface AuthContextType {
   user: User | null;
@@ -14,6 +15,8 @@ interface AuthContextType {
   session: Session | null;
   activeWorkspaceId: string | null;
   activeWorkspace: { id: string; name: string; deletionScheduledAt?: string | null; deletedAt?: string | null } | null;
+  workspaceMembers: WorkspaceMemberProfile[];
+  resolveMemberLabel: (userId?: string | null) => string;
   moduleAccess: ModuleAccessStatus | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
@@ -28,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [activeWorkspace, setActiveWorkspace] = useState<AuthContextType['activeWorkspace']>(null);
+  const [workspaceMembers, setWorkspaceMembers] = useState<WorkspaceMemberProfile[]>([]);
   const [moduleAccess, setModuleAccess] = useState<ModuleAccessStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
@@ -43,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setCoreUser(null);
       setActiveWorkspace(null);
+      setWorkspaceMembers([]);
       setModuleAccess(null);
       setIsLoading(false);
       return;
@@ -93,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.user) {
         setCoreUser(data.user);
       }
+      setWorkspaceMembers(Array.isArray(data.workspaceMembers) ? data.workspaceMembers : []);
       syncCoreLanguagePreference(data.user?.language);
       
       const hasStockAccess = data.entitlements && data.entitlements.includes("stock");
@@ -162,6 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setCoreUser(null);
       setActiveWorkspace(null);
+      setWorkspaceMembers([]);
       setModuleAccess(null);
       if (window.location.pathname !== '/login') {
         window.location.href = '/login?session_expired=true';
@@ -256,12 +263,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = `${coreUrl}/api/auth/logout?returnTo=${encodeURIComponent(window.location.origin + '/login')}`;
   };
 
+  const resolveMemberLabel = (userId?: string | null): string => {
+    if (!userId) return '';
+    const member = workspaceMembers.find((m) => m.id === userId);
+    if (member) {
+      return member.name || member.email || userId.slice(0, 8);
+    }
+    if (user?.id === userId) {
+      return coreUser?.name || coreUser?.email || user.email || userId.slice(0, 8);
+    }
+    return `ID ${userId.slice(0, 8)}`;
+  };
+
   const value = {
     user,
     coreUser,
     session,
     activeWorkspaceId,
     activeWorkspace,
+    workspaceMembers,
+    resolveMemberLabel,
     moduleAccess,
     isLoading,
     signOut,

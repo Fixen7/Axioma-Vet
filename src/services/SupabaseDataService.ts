@@ -35,6 +35,28 @@ const toSnake = (obj: any): any => {
   return obj;
 };
 
+/**
+ * Strips immutable attribution/identity columns on update so original created_by is preserved
+ * and only updated_by reflects the current actor.
+ */
+export function buildUpdatePayload<T extends Record<string, any>>(entity: T, userId: string): Record<string, any> {
+  const { workspace_id: _ws, created_by: _cb, created_at: _ca, id: _id, ...updates } = toSnake(entity);
+  return { ...updates, updated_by: userId };
+}
+
+/**
+ * Stamps created_by, updated_by, and workspace_id on newly inserted clinical records.
+ */
+export function buildInsertPayload<T extends Record<string, any>>(
+  entity: T,
+  userId: string,
+  workspaceId: string
+): Record<string, any> {
+  const snake = toSnake({ ...entity, createdBy: userId, updatedBy: userId });
+  snake.workspace_id = workspaceId;
+  return snake;
+}
+
 export class SupabaseDataService implements IDataService {
   private activeWorkspaceId: string | null = null;
 
@@ -51,6 +73,28 @@ export class SupabaseDataService implements IDataService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Usuario no autenticado');
     return user.id;
+  }
+
+  private async upsertScopedEntity<T>(table: string, entity: Record<string, any> & { id?: string }): Promise<T> {
+    const userId = await this.getUserId();
+    const wsId = this.getWorkspaceId();
+    if (entity.id) {
+      const snakeData = buildUpdatePayload(entity, userId);
+      const { data, error } = await supabase
+        .from(table)
+        .update(snakeData)
+        .eq('id', entity.id)
+        .eq('workspace_id', wsId)
+        .select()
+        .single();
+      if (error) throw error;
+      return toCamel(data) as T;
+    }
+
+    const snakeData = buildInsertPayload(entity, userId, wsId);
+    const { data, error } = await supabase.from(table).insert(snakeData).select().single();
+    if (error) throw error;
+    return toCamel(data) as T;
   }
 
   // PATIENTS
@@ -71,30 +115,19 @@ export class SupabaseDataService implements IDataService {
   }
 
   async savePatient(patient: Omit<Patient, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }): Promise<Patient> {
-    const userId = await this.getUserId();
-    
-    if (patient.id) {
-      const { workspace_id: _, ...updates } = toSnake(patient);
-      const snakeData = { ...updates, created_by: userId };
-
-      const { data, error } = await supabase.from('patients').update(snakeData).eq('id', patient.id).eq('workspace_id', this.getWorkspaceId()).select().single();
-      if (error) throw error;
-      return toCamel(data) as Patient;
-    
-    } else {
-      const snakeData = toSnake({ ...patient, createdBy: userId });
-      snakeData.workspace_id = this.getWorkspaceId();
-
-      const { data, error } = await supabase.from('patients').insert(snakeData).select().single();
-      if (error) throw error;
-      return toCamel(data) as Patient;
-    
-    }
+    return this.upsertScopedEntity<Patient>('patients', patient);
   }
 
   async updatePatient(patientId: string, updates: Partial<Patient>): Promise<Patient> {
-    const { workspace_id: _, ...snakeData } = toSnake(updates) as any;
-    const { data, error } = await supabase.from('patients').update(snakeData).eq('id', patientId).eq('workspace_id', this.getWorkspaceId()).select().single();
+    const userId = await this.getUserId();
+    const snakeData = buildUpdatePayload(updates, userId);
+    const { data, error } = await supabase
+      .from('patients')
+      .update(snakeData)
+      .eq('id', patientId)
+      .eq('workspace_id', this.getWorkspaceId())
+      .select()
+      .single();
     if (error) throw error;
     return toCamel(data) as Patient;
   }
@@ -127,25 +160,7 @@ export class SupabaseDataService implements IDataService {
   }
 
   async saveConsultation(consultation: Omit<Consultation, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }): Promise<Consultation> {
-    const userId = await this.getUserId();
-    
-    if (consultation.id) {
-      const { workspace_id: _, ...updates } = toSnake(consultation);
-      const snakeData = { ...updates, created_by: userId };
-
-      const { data, error } = await supabase.from('consultations').update(snakeData).eq('id', consultation.id).eq('workspace_id', this.getWorkspaceId()).select().single();
-      if (error) throw error;
-      return toCamel(data) as Consultation;
-    
-    } else {
-      const snakeData = toSnake({ ...consultation, createdBy: userId });
-      snakeData.workspace_id = this.getWorkspaceId();
-
-      const { data, error } = await supabase.from('consultations').insert(snakeData).select().single();
-      if (error) throw error;
-      return toCamel(data) as Consultation;
-    
-    }
+    return this.upsertScopedEntity<Consultation>('consultations', consultation);
   }
 
   async deleteConsultation(id: string): Promise<void> {
@@ -161,25 +176,7 @@ export class SupabaseDataService implements IDataService {
   }
 
   async savePrescription(prescription: Omit<Prescription, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }): Promise<Prescription> {
-    const userId = await this.getUserId();
-    
-    if (prescription.id) {
-      const { workspace_id: _, ...updates } = toSnake(prescription);
-      const snakeData = { ...updates, created_by: userId };
-
-      const { data, error } = await supabase.from('prescriptions').update(snakeData).eq('id', prescription.id).eq('workspace_id', this.getWorkspaceId()).select().single();
-      if (error) throw error;
-      return toCamel(data) as Prescription;
-    
-    } else {
-      const snakeData = toSnake({ ...prescription, createdBy: userId });
-      snakeData.workspace_id = this.getWorkspaceId();
-
-      const { data, error } = await supabase.from('prescriptions').insert(snakeData).select().single();
-      if (error) throw error;
-      return toCamel(data) as Prescription;
-    
-    }
+    return this.upsertScopedEntity<Prescription>('prescriptions', prescription);
   }
 
   async deletePrescription(id: string): Promise<void> {
@@ -201,25 +198,7 @@ export class SupabaseDataService implements IDataService {
   }
 
   async saveVaccine(vaccine: Omit<Vaccine, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }): Promise<Vaccine> {
-    const userId = await this.getUserId();
-    
-    if (vaccine.id) {
-      const { workspace_id: _, ...updates } = toSnake(vaccine);
-      const snakeData = { ...updates, created_by: userId };
-
-      const { data, error } = await supabase.from('vaccines').update(snakeData).eq('id', vaccine.id).eq('workspace_id', this.getWorkspaceId()).select().single();
-      if (error) throw error;
-      return toCamel(data) as Vaccine;
-    
-    } else {
-      const snakeData = toSnake({ ...vaccine, createdBy: userId });
-      snakeData.workspace_id = this.getWorkspaceId();
-
-      const { data, error } = await supabase.from('vaccines').insert(snakeData).select().single();
-      if (error) throw error;
-      return toCamel(data) as Vaccine;
-    
-    }
+    return this.upsertScopedEntity<Vaccine>('vaccines', vaccine);
   }
 
   async deleteVaccine(id: string): Promise<void> {
@@ -235,25 +214,7 @@ export class SupabaseDataService implements IDataService {
   }
 
   async saveLab(lab: Omit<LabResult, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }): Promise<LabResult> {
-    const userId = await this.getUserId();
-    
-    if (lab.id) {
-      const { workspace_id: _, ...updates } = toSnake(lab);
-      const snakeData = { ...updates, created_by: userId };
-
-      const { data, error } = await supabase.from('lab_results').update(snakeData).eq('id', lab.id).eq('workspace_id', this.getWorkspaceId()).select().single();
-      if (error) throw error;
-      return toCamel(data) as LabResult;
-    
-    } else {
-      const snakeData = toSnake({ ...lab, createdBy: userId });
-      snakeData.workspace_id = this.getWorkspaceId();
-
-      const { data, error } = await supabase.from('lab_results').insert(snakeData).select().single();
-      if (error) throw error;
-      return toCamel(data) as LabResult;
-    
-    }
+    return this.upsertScopedEntity<LabResult>('lab_results', lab);
   }
 
   async deleteLab(id: string): Promise<void> {
@@ -275,25 +236,7 @@ export class SupabaseDataService implements IDataService {
   }
 
   async saveSurgery(surgery: Omit<Surgery, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }): Promise<Surgery> {
-    const userId = await this.getUserId();
-    
-    if (surgery.id) {
-      const { workspace_id: _, ...updates } = toSnake(surgery);
-      const snakeData = { ...updates, created_by: userId };
-
-      const { data, error } = await supabase.from('surgeries').update(snakeData).eq('id', surgery.id).eq('workspace_id', this.getWorkspaceId()).select().single();
-      if (error) throw error;
-      return toCamel(data) as Surgery;
-    
-    } else {
-      const snakeData = toSnake({ ...surgery, createdBy: userId });
-      snakeData.workspace_id = this.getWorkspaceId();
-
-      const { data, error } = await supabase.from('surgeries').insert(snakeData).select().single();
-      if (error) throw error;
-      return toCamel(data) as Surgery;
-    
-    }
+    return this.upsertScopedEntity<Surgery>('surgeries', surgery);
   }
 
   async deleteSurgery(id: string): Promise<void> {
@@ -310,16 +253,15 @@ export class SupabaseDataService implements IDataService {
 
   async saveSettings(settings: GlobalSettings): Promise<void> {
     const userId = await this.getUserId();
-    const { workspace_id: _, ...updates } = toSnake(settings) as any;
-    const snakeData = { ...updates, created_by: userId };
-    
-    const { data: existing } = await supabase.from('global_settings').select('id').eq('workspace_id', this.getWorkspaceId()).maybeSingle();
+    const wsId = this.getWorkspaceId();
+    const { data: existing } = await supabase.from('global_settings').select('id').eq('workspace_id', wsId).maybeSingle();
     
     if (existing) {
-      const { error } = await supabase.from('global_settings').update(snakeData).eq('id', existing.id).eq('workspace_id', this.getWorkspaceId());
+      const snakeData = buildUpdatePayload(settings, userId);
+      const { error } = await supabase.from('global_settings').update(snakeData).eq('id', existing.id).eq('workspace_id', wsId);
       if (error) throw error;
     } else {
-      const insertData = { ...snakeData, workspace_id: this.getWorkspaceId() };
+      const insertData = buildInsertPayload(settings, userId, wsId);
       const { error } = await supabase.from('global_settings').insert(insertData);
       if (error) throw error;
     }
@@ -334,9 +276,7 @@ export class SupabaseDataService implements IDataService {
 
   async saveManualEvent(event: Omit<ManualEvent, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }): Promise<ManualEvent> {
     const userId = await this.getUserId();
-    const snakeData = toSnake({ ...event, createdBy: userId });
-    snakeData.workspace_id = this.getWorkspaceId();
-    
+    const snakeData = buildInsertPayload(event, userId, this.getWorkspaceId());
     const { data, error } = await supabase.from('manual_events').insert(snakeData).select().single();
     if (error) throw error;
     return toCamel(data) as ManualEvent;
@@ -350,23 +290,7 @@ export class SupabaseDataService implements IDataService {
   }
 
   async saveGrooming(grooming: Omit<Grooming, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }): Promise<Grooming> {
-    const userId = await this.getUserId();
-    
-    if (grooming.id) {
-      const { workspace_id: _, ...updates } = toSnake(grooming);
-      const snakeData = { ...updates, created_by: userId };
-      
-      const { data, error } = await supabase.from('groomings').update(snakeData).eq('id', grooming.id).eq('workspace_id', this.getWorkspaceId()).select().single();
-      if (error) throw error;
-      return toCamel(data) as Grooming;
-    } else {
-      const snakeData = toSnake({ ...grooming, createdBy: userId });
-      snakeData.workspace_id = this.getWorkspaceId();
-      
-      const { data, error } = await supabase.from('groomings').insert(snakeData).select().single();
-      if (error) throw error;
-      return toCamel(data) as Grooming;
-    }
+    return this.upsertScopedEntity<Grooming>('groomings', grooming);
   }
 
   async deleteGrooming(id: string): Promise<void> {
@@ -382,25 +306,7 @@ export class SupabaseDataService implements IDataService {
   }
 
   async saveWeightRecord(record: Omit<WeightRecord, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }): Promise<WeightRecord> {
-    const userId = await this.getUserId();
-    
-    if (record.id) {
-      const { workspace_id: _, ...updates } = toSnake(record);
-      const snakeData = { ...updates, created_by: userId };
-
-      const { data, error } = await supabase.from('weight_records').update(snakeData).eq('id', record.id).eq('workspace_id', this.getWorkspaceId()).select().single();
-      if (error) throw error;
-      return toCamel(data) as WeightRecord;
-    
-    } else {
-      const snakeData = toSnake({ ...record, createdBy: userId });
-      snakeData.workspace_id = this.getWorkspaceId();
-
-      const { data, error } = await supabase.from('weight_records').insert(snakeData).select().single();
-      if (error) throw error;
-      return toCamel(data) as WeightRecord;
-    
-    }
+    return this.upsertScopedEntity<WeightRecord>('weight_records', record);
   }
 
   async deleteWeightRecord(id: string): Promise<void> {

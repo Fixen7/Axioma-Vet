@@ -5,6 +5,14 @@ export interface BaseEntity {
   createdAt: string;
   updatedAt: string;
   createdBy: string | null;
+  updatedBy?: string | null;
+}
+
+export interface WorkspaceMemberProfile {
+  id: string;
+  email: string | null;
+  name: string | null;
+  role: string;
 }
 
 export interface Patient extends BaseEntity {
