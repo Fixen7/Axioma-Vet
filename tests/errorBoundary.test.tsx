@@ -15,6 +15,8 @@ function ThrowingComponent({ shouldThrow }: { shouldThrow: boolean }) {
 describe('GlobalErrorBoundary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
+    localStorage.setItem('axioma-vet-lang-pref', 'es');
     // Spy on console.error to avoid cluttering test output with React's expected error boundary logs
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });

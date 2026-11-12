@@ -4,8 +4,10 @@ import { Button } from '../ui/Button';
 import { useVetContext } from '../../context/VetContext';
 import type { Grooming } from '../../services/types';
 import { getLocalDatetimeString, formatLocalDate, toUTCDateTime } from '../../utils/date';
+import { useTranslation } from '../../i18n';
 
 export function GroomingTab({ patientId, isDeceased }: { patientId: string, isDeceased: boolean }) {
+  const { t } = useTranslation();
   const { getGroomings, saveGrooming, deleteGrooming } = useVetContext();
   const [groomings, setGroomings] = useState<Grooming[]>([]);
   const [isAdding, setIsAdding] = useState(false);
@@ -35,7 +37,7 @@ export function GroomingTab({ patientId, isDeceased }: { patientId: string, isDe
 
   const handleSubmit = async () => {
     if (!formData.service || !formData.date) {
-      alert('Por favor completa todos los campos obligatorios (*).');
+      alert(t('Por favor completa todos los campos obligatorios (*).', 'Please complete all required fields (*).'));
       return;
     }
 
@@ -65,47 +67,47 @@ export function GroomingTab({ patientId, isDeceased }: { patientId: string, isDe
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("¿Seguro que quieres eliminar este registro de peluquería?")) {
+    if (window.confirm(t('¿Seguro que quieres eliminar este registro de peluquería?', 'Are you sure you want to delete this grooming record?'))) {
       try {
         await deleteGrooming(id);
         loadGroomings();
       } catch (error: any) {
-        alert("Error al eliminar: " + error.message);
+        alert(t('Error al eliminar: ', 'Error deleting: ') + error.message);
       }
     }
   };
 
-  if (isLoading) return <div className="py-8 text-outline">Cargando historial de peluquería...</div>;
+  if (isLoading) return <div className="py-8 text-outline">{t('Cargando historial de peluquería...', 'Loading grooming history...')}</div>;
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex justify-between items-center">
-        <h3 className="font-headline-lg m-0">Historial de Peluquería</h3>
+        <h3 className="font-headline-lg m-0">{t('Historial de Peluquería', 'Grooming History')}</h3>
         {!isDeceased && !isAdding && (
           <Button variant="primary" onClick={() => setIsAdding(true)}>
-            <PlusCircle className="w-5 h-5" /> Nuevo Registro
+            <PlusCircle className="w-5 h-5" /> {t('Nuevo Registro', 'New Record')}
           </Button>
         )}
       </div>
 
       {isAdding && (
         <div className="bg-surface-container-lowest border border-primary-container p-6 rounded-2xl flex flex-col gap-6 shadow-sm">
-          <h4 className="font-headline-md m-0 text-primary">Registrar Sesión de Peluquería</h4>
+          <h4 className="font-headline-md m-0 text-primary">{t('Registrar Sesión de Peluquería', 'Record Grooming Session')}</h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
-              <label className="font-label-md text-on-surface-variant">Servicio Realizado *</label>
+              <label className="font-label-md text-on-surface-variant">{t('Servicio Realizado *', 'Service Performed *')}</label>
               <input 
                 type="text" 
                 name="service" 
                 value={formData.service} 
                 onChange={handleChange}
                 className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none"
-                placeholder="Ej. Baño y Corte, Deslanado..."
+                placeholder={t('Ej. Baño y Corte, Deslanado...', 'e.g. Bath & Trim, Deshedding...')}
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="font-label-md text-on-surface-variant">Fecha *</label>
+              <label className="font-label-md text-on-surface-variant">{t('Fecha *', 'Date *')}</label>
               <input 
                 type="datetime-local" 
                 name="date" 
@@ -117,20 +119,20 @@ export function GroomingTab({ patientId, isDeceased }: { patientId: string, isDe
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="font-label-md text-on-surface-variant">Observaciones (Opcional)</label>
+            <label className="font-label-md text-on-surface-variant">{t('Observaciones (Opcional)', 'Observations (Optional)')}</label>
             <textarea 
               name="observations" 
               value={formData.observations} 
               onChange={handleChange}
               rows={3}
               className="w-full p-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none resize-none"
-              placeholder="Notas sobre comportamiento, alergias notadas, etc."
+              placeholder={t('Notas sobre comportamiento, alergias notadas, etc.', 'Notes on behavior, allergies noticed, etc.')}
             />
           </div>
 
           <div className="flex justify-end gap-4 mt-2">
-            <Button variant="ghost" onClick={handleCancel}>Cancelar</Button>
-            <Button variant="primary" onClick={handleSubmit}>Guardar Registro</Button>
+            <Button variant="ghost" onClick={handleCancel}>{t('Cancelar', 'Cancel')}</Button>
+            <Button variant="primary" onClick={handleSubmit}>{t('Guardar Registro', 'Save Record')}</Button>
           </div>
         </div>
       )}
@@ -138,7 +140,7 @@ export function GroomingTab({ patientId, isDeceased }: { patientId: string, isDe
       {groomings.length === 0 && !isAdding ? (
         <div className="py-12 flex flex-col items-center justify-center text-outline bg-surface-container-lowest rounded-2xl border border-dashed border-outline-variant">
           <Scissors className="w-12 h-12 mb-4 opacity-50" />
-          <p className="font-body-lg m-0">No hay registros de peluquería.</p>
+          <p className="font-body-lg m-0">{t('No hay registros de peluquería.', 'No grooming records found.')}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -151,14 +153,14 @@ export function GroomingTab({ patientId, isDeceased }: { patientId: string, isDe
                     <Calendar className="w-4 h-4" /> {formatLocalDate(grooming.date, true)}
                   </span>
                 </div>
-                <button onClick={() => handleDelete(grooming.id)} className="text-red-400 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors" title="Eliminar registro">
+                <button onClick={() => handleDelete(grooming.id)} className="text-red-400 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors" title={t('Eliminar registro', 'Delete record')}>
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
               
               {grooming.observations && (
                 <div className="flex flex-col gap-1 pt-2 border-t border-surface-variant">
-                  <h5 className="font-label-md text-on-surface-variant m-0 uppercase">Observaciones</h5>
+                  <h5 className="font-label-md text-on-surface-variant m-0 uppercase">{t('Observaciones', 'Observations')}</h5>
                   <p className="font-body-md text-on-surface m-0 whitespace-pre-wrap">{grooming.observations}</p>
                 </div>
               )}

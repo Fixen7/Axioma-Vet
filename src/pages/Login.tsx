@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Activity, ShieldCheck } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { useTranslation } from '../i18n';
 
 export default function Login() {
   const { user, isLoading } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Si ya está logueado, redirigir
   useEffect(() => {
     if (user && !isLoading) {
       navigate('/', { replace: true });
@@ -34,7 +35,6 @@ export default function Login() {
     }
   };
 
-  // Si viene con el parametro sso=true, auto-conectar con Core
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('sso') === 'true' && !user && !isLoading && !isConnecting) {
@@ -47,7 +47,6 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center p-4 antialiased selection:bg-primary-container selection:text-on-primary-container relative overflow-hidden">
       
-      {/* Elementos decorativos */}
       <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary-container/30 to-transparent"></div>
       <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary-container opacity-[0.15] rounded-full blur-[100px]"></div>
       <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-secondary-container opacity-[0.15] rounded-full blur-[100px]"></div>
@@ -61,7 +60,7 @@ export default function Login() {
 
           <h1 className="font-display text-display text-on-surface m-0 mb-2">Axioma-Vet</h1>
           <p className="font-body-lg text-on-surface-variant m-0 mb-8 max-w-[280px]">
-            Sistema integral de gestión clínica veterinaria.
+            {t('Sistema integral de gestión clínica veterinaria.', 'Comprehensive veterinary clinical management system.')}
           </p>
 
           <div className="w-full flex flex-col gap-4">
@@ -74,7 +73,7 @@ export default function Login() {
               {isConnecting ? (
                 <>
                   <Activity className="w-5 h-5 animate-spin" />
-                  Conectando...
+                  {t('Conectando...', 'Connecting...')}
                 </>
               ) : (
                 <>
@@ -96,7 +95,9 @@ export default function Login() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  <span className="font-label-lg font-medium text-lg">Continuar con Google</span>
+                  <span className="font-label-lg font-medium text-lg">
+                    {t('Continuar con Google', 'Continue with Google')}
+                  </span>
                 </>
               )}
             </Button>
@@ -104,7 +105,7 @@ export default function Login() {
 
           <div className="mt-8 flex items-center justify-center gap-2 text-outline font-label-md">
             <ShieldCheck className="w-4 h-4" />
-            <span>Acceso seguro mediante Axioma Core</span>
+            <span>{t('Acceso seguro mediante Axioma Core', 'Secure access via Axioma Core')}</span>
           </div>
         </div>
 
@@ -115,4 +116,3 @@ export default function Login() {
     </div>
   );
 }
-

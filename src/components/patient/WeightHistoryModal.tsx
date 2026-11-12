@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, TrendingUp, Edit2, Trash2, Check, RotateCcw } from 'lucide-react';
 import { useVetContext } from '../../context/VetContext';
 import type { WeightRecord } from '../../services/types';
+import { useTranslation } from '../../i18n';
 
 interface WeightHistoryModalProps {
   patientId: string;
@@ -10,6 +11,7 @@ interface WeightHistoryModalProps {
 }
 
 export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: WeightHistoryModalProps) {
+  const { t, intlLocale } = useTranslation();
   const { getWeightRecords, saveWeightRecord, deleteWeightRecord, updatePatient } = useVetContext();
   const [records, setRecords] = useState<WeightRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,11 +74,11 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
   const handleSaveEdit = async (recordId: string) => {
     const val = parseFloat(editWeight);
     if (isNaN(val) || val <= 0) {
-      alert('Ingresa un peso numérico válido mayor a 0');
+      alert(t('Ingresa un peso numérico válido mayor a 0', 'Enter a valid numeric weight greater than 0'));
       return;
     }
     if (!editDate) {
-      alert('Selecciona una fecha válida');
+      alert(t('Selecciona una fecha válida', 'Select a valid date'));
       return;
     }
 
@@ -96,14 +98,14 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
       await syncLatestPatientWeight(sorted);
       handleCancelEdit();
     } catch (err: any) {
-      alert('Error al actualizar registro de peso: ' + err.message);
+      alert(t('Error al actualizar registro de peso: ', 'Error updating weight record: ') + err.message);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDeleteRecord = async (recordId: string) => {
-    const isConfirmed = window.confirm('¿Estás seguro de que deseas eliminar este registro de peso? Esta acción no se puede deshacer.');
+    const isConfirmed = window.confirm(t('¿Estás seguro de que deseas eliminar este registro de peso? Esta acción no se puede deshacer.', 'Are you sure you want to delete this weight record? This action cannot be undone.'));
     if (!isConfirmed) return;
 
     try {
@@ -114,7 +116,7 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
       setRecords(sorted);
       await syncLatestPatientWeight(sorted);
     } catch (err: any) {
-      alert('Error al eliminar registro de peso: ' + err.message);
+      alert(t('Error al eliminar registro de peso: ', 'Error deleting weight record: ') + err.message);
     } finally {
       setIsSaving(false);
     }
@@ -151,7 +153,7 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
         <div className="flex items-center justify-between p-6 border-b border-surface-container-high">
           <div className="flex items-center gap-2 text-primary">
             <TrendingUp className="w-6 h-6" />
-            <h3 className="font-headline-sm m-0">Evolución e Historial de Peso</h3>
+            <h3 className="font-headline-sm m-0">{t('Evolución e Historial de Peso', 'Weight History & Trend')}</h3>
           </div>
           <button 
             onClick={onClose}
@@ -163,12 +165,12 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
         
         <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
           {isLoading ? (
-            <div className="w-full py-8 flex justify-center text-outline">Cargando historial...</div>
+            <div className="w-full py-8 flex justify-center text-outline">{t('Cargando historial...', 'Loading history...')}</div>
           ) : records.length === 0 ? (
             <div className="w-full py-8 flex flex-col items-center text-outline gap-2">
               <TrendingUp className="w-12 h-12 opacity-50" />
-              <p className="font-body-md text-center m-0">No hay registros históricos de peso aún.</p>
-              <p className="font-label-sm opacity-70 text-center m-0">Edita el peso del paciente para crear el primer registro.</p>
+              <p className="font-body-md text-center m-0">{t('No hay registros históricos de peso aún.', 'No historical weight records yet.')}</p>
+              <p className="font-label-sm opacity-70 text-center m-0">{t('Edita el peso del paciente para crear el primer registro.', 'Edit the patient\'s weight to create the first record.')}</p>
             </div>
           ) : (
             <div className="w-full flex flex-col gap-6">
@@ -222,7 +224,7 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
                         textAnchor="middle" 
                         className="text-[9px] fill-outline"
                       >
-                        {new Date(record.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        {new Date(record.date).toLocaleDateString(intlLocale, { month: 'short', day: 'numeric' })}
                       </text>
                     </g>
                   ))}
@@ -233,10 +235,10 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
               <div className="w-full flex flex-col gap-2">
                 <div className="flex items-center justify-between mb-1">
                   <h4 className="font-label-md text-outline uppercase tracking-wider">
-                    Registros ({records.length})
+                    {t('Registros', 'Records')} ({records.length})
                   </h4>
                   <span className="text-[11px] text-on-surface-variant">
-                    Puedes editar o eliminar cualquier registro
+                    {t('Puedes editar o eliminar cualquier registro', 'You can edit or delete any record')}
                   </span>
                 </div>
 
@@ -249,7 +251,7 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
                         <div key={record.id} className="p-3 bg-primary-container/10 flex flex-col gap-2 animate-in fade-in">
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="text-[10px] font-bold uppercase text-outline">Peso (kg)</label>
+                              <label className="text-[10px] font-bold uppercase text-outline">{t('Peso (kg)', 'Weight (kg)')}</label>
                               <input
                                 type="number"
                                 step="0.01"
@@ -260,7 +262,7 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] font-bold uppercase text-outline">Fecha</label>
+                              <label className="text-[10px] font-bold uppercase text-outline">{t('Fecha', 'Date')}</label>
                               <input
                                 type="date"
                                 value={editDate}
@@ -270,10 +272,10 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
                             </div>
                           </div>
                           <div>
-                            <label className="text-[10px] font-bold uppercase text-outline">Nota / Observación</label>
+                            <label className="text-[10px] font-bold uppercase text-outline">{t('Nota / Observación', 'Note / Observation')}</label>
                             <input
                               type="text"
-                              placeholder="Ej: En ayunas, post cirugía..."
+                              placeholder={t('Ej: En ayunas, post cirugía...', 'e.g. Fasting, post-surgery...')}
                               value={editNotes}
                               onChange={e => setEditNotes(e.target.value)}
                               className="w-full px-2 py-1 text-sm rounded-lg border border-outline-variant bg-surface text-on-surface focus:outline-primary"
@@ -287,7 +289,7 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
                               className="px-2.5 py-1 text-xs rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container transition-colors flex items-center gap-1"
                             >
                               <RotateCcw className="w-3 h-3" />
-                              Cancelar
+                              {t('Cancelar', 'Cancel')}
                             </button>
                             <button
                               type="button"
@@ -296,7 +298,7 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
                               className="px-3 py-1 text-xs rounded-lg bg-primary text-on-primary font-medium hover:opacity-90 transition-opacity flex items-center gap-1"
                             >
                               <Check className="w-3 h-3" />
-                              {isSaving ? 'Guardando...' : 'Guardar'}
+                              {isSaving ? t('Guardando...', 'Saving...') : t('Guardar', 'Save')}
                             </button>
                           </div>
                         </div>
@@ -311,7 +313,7 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
                               {record.weightKg} kg
                             </span>
                             <span className="text-xs text-on-surface-variant font-medium">
-                              · {new Date(record.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                              · {new Date(record.date).toLocaleDateString(intlLocale, { year: 'numeric', month: 'short', day: 'numeric' })}
                             </span>
                           </div>
                           {record.notes && (
@@ -327,7 +329,7 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
                             onClick={() => handleStartEdit(record)}
                             disabled={isSaving}
                             className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary-container/20 rounded-lg transition-colors"
-                            title="Editar este registro de peso"
+                            title={t('Editar este registro de peso', 'Edit this weight record')}
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
@@ -336,7 +338,7 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
                             onClick={() => handleDeleteRecord(record.id)}
                             disabled={isSaving}
                             className="p-1.5 text-on-surface-variant hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors"
-                            title="Eliminar este registro de peso"
+                            title={t('Eliminar este registro de peso', 'Delete this weight record')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -355,7 +357,7 @@ export function WeightHistoryModal({ patientId, onClose, onWeightChanged }: Weig
             onClick={onClose}
             className="px-6 py-2 rounded-xl bg-surface-container text-on-surface font-label-md hover:bg-surface-container-high transition-colors"
           >
-            Cerrar
+            {t('Cerrar', 'Close')}
           </button>
         </div>
       </div>

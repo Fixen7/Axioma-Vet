@@ -3,6 +3,7 @@ import { X, Search, Stethoscope, Sparkles, Filter, Calendar, Activity, Pill } fr
 import { useVetContext } from '../../context/VetContext';
 import type { Patient, Consultation } from '../../services/types';
 import { formatLocalDate } from '../../utils/date';
+import { useTranslation } from '../../i18n';
 
 interface SimilarCasesModalProps {
   currentPatient: Patient;
@@ -15,6 +16,7 @@ export function SimilarCasesModal({
   initialDiagnosis = '',
   onClose
 }: SimilarCasesModalProps) {
+  const { t } = useTranslation();
   const { getAllConsultations, patients } = useVetContext();
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [searchTerm, setSearchTerm] = useState(initialDiagnosis);
@@ -94,8 +96,8 @@ export function SimilarCasesModal({
           <div className="flex items-center gap-2.5 text-primary">
             <Sparkles className="w-6 h-6" />
             <div>
-              <h3 className="font-headline-sm m-0 text-base md:text-lg">Casos Similares en la Clínica</h3>
-              <p className="text-xs text-on-surface-variant m-0">Memoria de diagnósticos y tratamientos registrados previamente</p>
+              <h3 className="font-headline-sm m-0 text-base md:text-lg">{t('Casos Similares en la Clínica', 'Similar Clinic Cases')}</h3>
+              <p className="text-xs text-on-surface-variant m-0">{t('Memoria de diagnósticos y tratamientos registrados previamente', 'Memory of previously recorded diagnoses and treatments')}</p>
             </div>
           </div>
           <button 
@@ -114,7 +116,7 @@ export function SimilarCasesModal({
               type="text"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Buscar por diagnóstico o síntoma (ej: gastroenteritis, otitis, dermatitis)..."
+              placeholder={t('Buscar por diagnóstico o síntoma (ej: gastroenteritis, otitis, dermatitis)...', 'Search by diagnosis or symptom (e.g. gastroenteritis, otitis, dermatitis)...')}
               className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface focus:outline-primary"
             />
           </div>
@@ -129,7 +131,7 @@ export function SimilarCasesModal({
             }`}
           >
             <Filter className="w-3.5 h-3.5" />
-            Solo {currentPatient.species}s
+            {t('Solo', 'Only')} {currentPatient.species}s
           </button>
         </div>
 
@@ -137,25 +139,25 @@ export function SimilarCasesModal({
         <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-5">
           {isLoading ? (
             <div className="w-full py-12 flex justify-center text-outline">
-              Consultando la memoria clínica de la clínica...
+              {t('Consultando la memoria clínica de la clínica...', 'Querying clinic clinical memory...')}
             </div>
           ) : !searchTerm.trim() ? (
             <div className="w-full py-12 flex flex-col items-center text-outline gap-2">
               <Stethoscope className="w-10 h-10 opacity-40" />
-              <p className="text-sm font-medium text-center m-0">Escribe un diagnóstico o síntoma para contrastar con casos anteriores.</p>
-              <p className="text-xs opacity-70 text-center m-0">Ejemplo: «otitis», «parvovirus», «gastritis», «alergia»</p>
+              <p className="text-sm font-medium text-center m-0">{t('Escribe un diagnóstico o síntoma para contrastar con casos anteriores.', 'Enter a diagnosis or symptom to compare against previous cases.')}</p>
+              <p className="text-xs opacity-70 text-center m-0">{t('Ejemplo: «otitis», «parvovirus», «gastritis», «alergia»', 'Example: "otitis", "parvovirus", "gastritis", "allergy"')}</p>
             </div>
           ) : matchingCases.length === 0 ? (
             <div className="w-full py-12 flex flex-col items-center text-outline gap-2">
               <Activity className="w-10 h-10 opacity-40" />
-              <p className="text-sm font-medium text-center m-0">No se encontraron casos registrados con ese término{filterSameSpecies ? ` en ${currentPatient.species}s` : ''}.</p>
+              <p className="text-sm font-medium text-center m-0">{t('No se encontraron casos registrados con ese término', 'No recorded cases found for that term')}{filterSameSpecies ? ` ${t('en', 'in')} ${currentPatient.species}s` : ''}.</p>
               {filterSameSpecies && (
                 <button
                   type="button"
                   onClick={() => setFilterSameSpecies(false)}
                   className="text-xs text-primary underline mt-1"
                 >
-                  Buscar en todas las especies
+                  {t('Buscar en todas las especies', 'Search across all species')}
                 </button>
               )}
             </div>
@@ -165,12 +167,12 @@ export function SimilarCasesModal({
               {/* RESUMEN ESTADÍSTICO DETERMINISTA */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/40 flex items-center justify-between">
-                  <span className="text-xs text-on-surface-variant font-medium">Casos coincidentes:</span>
-                  <span className="text-lg font-bold text-primary">{matchingCases.length} {matchingCases.length === 1 ? 'paciente' : 'pacientes'}</span>
+                  <span className="text-xs text-on-surface-variant font-medium">{t('Casos coincidentes:', 'Matching cases:')}</span>
+                  <span className="text-lg font-bold text-primary">{matchingCases.length} {matchingCases.length === 1 ? t('paciente', 'patient') : t('pacientes', 'patients')}</span>
                 </div>
                 <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/40 flex items-center justify-between">
-                  <span className="text-xs text-on-surface-variant font-medium">Especie evaluada:</span>
-                  <span className="text-xs font-bold text-on-surface uppercase">{filterSameSpecies ? currentPatient.species : 'Todas'}</span>
+                  <span className="text-xs text-on-surface-variant font-medium">{t('Especie evaluada:', 'Evaluated species:')}</span>
+                  <span className="text-xs font-bold text-on-surface uppercase">{filterSameSpecies ? currentPatient.species : t('Todas', 'All')}</span>
                 </div>
               </div>
 
@@ -179,14 +181,14 @@ export function SimilarCasesModal({
                 <div className="border border-outline-variant/40 rounded-2xl p-4 bg-surface-container-lowest flex flex-col gap-2.5">
                   <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
                     <Pill className="w-4 h-4" />
-                    <span>Tratamientos documentados en estos casos</span>
+                    <span>{t('Tratamientos documentados en estos casos', 'Documented treatments in these cases')}</span>
                   </div>
                   <div className="flex flex-col gap-1.5 divide-y divide-surface-container-high">
                     {treatmentSummary.map((item, idx) => (
                       <div key={idx} className="pt-2 first:pt-0 flex items-start justify-between gap-3 text-xs">
                         <span className="text-on-surface font-medium leading-relaxed">{item.treatment}</span>
                         <span className="shrink-0 bg-surface-container-high px-2 py-0.5 rounded text-[11px] font-bold text-on-surface-variant">
-                          {item.count} {item.count === 1 ? 'caso' : 'casos'}
+                          {item.count} {item.count === 1 ? t('caso', 'case') : t('casos', 'cases')}
                         </span>
                       </div>
                     ))}
@@ -197,7 +199,7 @@ export function SimilarCasesModal({
               {/* LISTA DETALLADA DE HISTORIALES */}
               <div className="flex flex-col gap-2">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-outline">
-                  Casos de referencia documentados ({matchingCases.length})
+                  {t('Casos de referencia documentados', 'Documented reference cases')} ({matchingCases.length})
                 </h4>
 
                 <div className="flex flex-col gap-3">
@@ -210,7 +212,7 @@ export function SimilarCasesModal({
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-on-surface">
-                            {pat ? `${pat.name} (${pat.species}${pat.breed ? ` · ${pat.breed}` : ''})` : 'Paciente'}
+                            {pat ? `${pat.name} (${pat.species}${pat.breed ? ` · ${pat.breed}` : ''})` : t('Paciente', 'Patient')}
                           </span>
                           <span className="text-[11px] text-outline flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
@@ -220,7 +222,7 @@ export function SimilarCasesModal({
 
                         {c.diagnosis && (
                           <p className="text-xs font-medium text-on-surface m-0">
-                            <strong>Diagnóstico:</strong> {c.diagnosis}
+                            <strong>{t('Diagnóstico:', 'Diagnosis:')}</strong> {c.diagnosis}
                           </p>
                         )}
 
@@ -232,7 +234,7 @@ export function SimilarCasesModal({
 
                         {c.treatment && (
                           <div className="mt-1 pt-1.5 border-t border-outline-variant/20 text-xs text-primary font-medium">
-                            <strong>Tratamiento:</strong> {c.treatment}
+                            <strong>{t('Tratamiento:', 'Treatment:')}</strong> {c.treatment}
                           </div>
                         )}
                       </div>
@@ -252,7 +254,7 @@ export function SimilarCasesModal({
             onClick={onClose}
             className="px-6 py-2 rounded-xl bg-surface-container text-on-surface font-label-md hover:bg-surface-container-high transition-colors text-xs font-medium"
           >
-            Cerrar
+            {t('Cerrar', 'Close')}
           </button>
         </div>
 

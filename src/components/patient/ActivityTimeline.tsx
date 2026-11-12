@@ -3,7 +3,8 @@ import { Syringe, FileText, Pill, Scissors, TestTube, Flag, MapPin } from 'lucid
 import { useVetContext } from '../../context/VetContext';
 import type { Consultation, Prescription, Vaccine, LabResult, Surgery } from '../../services/types';
 import { parseLocalDate, formatLocalDate } from '../../utils/date';
-import { getPointsBySource, QUADRANT_LABELS } from '../../utils/customAnatomyPoints';
+import { getPointsBySource, getQuadrantLabels } from '../../utils/customAnatomyPoints';
+import { useTranslation } from '../../i18n';
 
 interface TimelineEvent {
   id: string;
@@ -18,11 +19,13 @@ interface TimelineEvent {
 }
 
 export function ActivityTimeline({ patientId }: { patientId: string }) {
+  const { lang, t } = useTranslation();
   const { getConsultations, getPrescriptions, getVaccines, getLabs, getSurgeries, getGroomings, patients } = useVetContext();
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const quadrantLabels = getQuadrantLabels(lang);
     async function loadEvents() {
       setIsLoading(true);
       try {
@@ -40,14 +43,14 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
         // Add Consultations
         consultations.forEach((c: Consultation) => {
           const points = getPointsBySource(patientId, c.id);
-          const uniqueQuadrants = Array.from(new Set(points.map(p => QUADRANT_LABELS[p.quadrant])));
+          const uniqueQuadrants = Array.from(new Set(points.map(p => quadrantLabels[p.quadrant])));
 
           allEvents.push({
             id: c.id,
             type: 'consultation',
             date: parseLocalDate(c.createdAt),
-            title: `Consulta: ${c.reason}`,
-            description: c.diagnosis || 'Sin diagnóstico registrado',
+            title: `${t('Consulta', 'Consultation')}: ${c.reason}`,
+            description: c.diagnosis || t('Sin diagnóstico registrado', 'No diagnosis recorded'),
             icon: FileText,
             colorClass: 'text-blue-500 border-blue-200 bg-blue-50',
             anatomyPointsCount: points.length,
@@ -61,7 +64,7 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
             id: p.id,
             type: 'prescription',
             date: parseLocalDate(p.date),
-            title: `Receta Emitida`,
+            title: t('Receta Emitida', 'Prescription Issued'),
             description: `${p.medication} - ${p.dosage} (${p.duration})`,
             icon: Pill,
             colorClass: 'text-purple-500 border-purple-200 bg-purple-50'
@@ -74,8 +77,8 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
             id: v.id,
             type: 'vaccine',
             date: parseLocalDate(v.applicationDate),
-            title: `Vacuna: ${v.vaccineName}`,
-            description: v.observations || 'Aplicación exitosa',
+            title: `${t('Vacuna', 'Vaccine')}: ${v.vaccineName}`,
+            description: v.observations || t('Aplicación exitosa', 'Successfully administered'),
             icon: Syringe,
             colorClass: 'text-emerald-500 border-emerald-200 bg-emerald-50'
           });
@@ -87,8 +90,8 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
             id: l.id,
             type: 'lab',
             date: parseLocalDate(l.date),
-            title: `Laboratorio: ${l.examType}`,
-            description: l.result || 'Sin resultados detallados',
+            title: `${t('Laboratorio', 'Lab')}: ${l.examType}`,
+            description: l.result || t('Sin resultados detallados', 'No detailed results'),
             icon: TestTube,
             colorClass: 'text-amber-500 border-amber-200 bg-amber-50'
           });
@@ -97,14 +100,14 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
         // Add Surgeries
         surgeries.forEach((s: Surgery) => {
           const points = getPointsBySource(patientId, s.id);
-          const uniqueQuadrants = Array.from(new Set(points.map(p => QUADRANT_LABELS[p.quadrant])));
+          const uniqueQuadrants = Array.from(new Set(points.map(p => quadrantLabels[p.quadrant])));
 
           allEvents.push({
             id: s.id,
             type: 'surgery',
             date: parseLocalDate(s.date),
-            title: `Cirugía: ${s.procedure}`,
-            description: s.evolutionResult || 'Procedimiento completado',
+            title: `${t('Cirugía', 'Surgery')}: ${s.procedure}`,
+            description: s.evolutionResult || t('Procedimiento completado', 'Procedure completed'),
             icon: Scissors,
             colorClass: 'text-rose-500 border-rose-200 bg-rose-50',
             anatomyPointsCount: points.length,
@@ -118,8 +121,8 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
             id: g.id,
             type: 'grooming',
             date: parseLocalDate(g.date),
-            title: `Peluquería: ${g.service}`,
-            description: g.observations || 'Servicio realizado',
+            title: `${t('Peluquería', 'Grooming')}: ${g.service}`,
+            description: g.observations || t('Servicio realizado', 'Service completed'),
             icon: Scissors,
             colorClass: 'text-cyan-500 border-cyan-200 bg-cyan-50'
           });
@@ -132,8 +135,8 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
             id: `reg-${patient.id}`,
             type: 'registration',
             date: parseLocalDate(patient.createdAt),
-            title: 'Primer Registro',
-            description: 'Creación del expediente médico inicial.',
+            title: t('Primer Registro', 'Initial Registration'),
+            description: t('Creación del expediente médico inicial.', 'Initial medical record creation.'),
             icon: Flag,
             colorClass: 'text-outline border-outline-variant bg-surface-container'
           });
@@ -154,20 +157,20 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
     }
 
     loadEvents();
-  }, [patientId, getConsultations, getPrescriptions, getVaccines, getLabs, getSurgeries, getGroomings, patients]);
+  }, [patientId, lang, t, getConsultations, getPrescriptions, getVaccines, getLabs, getSurgeries, getGroomings, patients]);
 
   if (isLoading) {
-    return <div className="py-12 flex justify-center text-outline">Cargando actividad...</div>;
+    return <div className="py-12 flex justify-center text-outline">{t('Cargando actividad...', 'Loading activity...')}</div>;
   }
 
   if (events.length === 0) {
-    return <div className="py-12 flex justify-center text-outline">No hay actividad registrada.</div>;
+    return <div className="py-12 flex justify-center text-outline">{t('No hay actividad registrada.', 'No recorded activity.')}</div>;
   }
 
   return (
     <div className="flex flex-col gap-8">
       <header className="flex justify-between items-center border-b border-outline-variant pb-6">
-        <h3 className="font-headline-lg text-headline-lg text-on-surface m-0">Historial de Actividad</h3>
+        <h3 className="font-headline-lg text-headline-lg text-on-surface m-0">{t('Historial de Actividad', 'Activity History')}</h3>
       </header>
       
       <div className="relative pl-8 flex flex-col gap-12 before:content-[''] before:absolute before:left-[19px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-primary-container before:via-outline-variant before:to-transparent">
@@ -190,7 +193,7 @@ export function ActivityTimeline({ patientId }: { patientId: string }) {
                   {event.anatomyPointsCount !== undefined && event.anatomyPointsCount > 0 && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                       <MapPin className="w-3 h-3" />
-                      <span>{event.anatomyPointsCount} {event.anatomyPointsCount === 1 ? 'cuadrante' : 'cuadrantes'}</span>
+                      <span>{event.anatomyPointsCount} {event.anatomyPointsCount === 1 ? t('cuadrante', 'quadrant') : t('cuadrantes', 'quadrants')}</span>
                     </span>
                   )}
                 </div>

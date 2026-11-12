@@ -1,3 +1,5 @@
+import { getCurrentLanguage, type AppLanguage } from '../i18n';
+
 export type PointSeverity = 'problem' | 'observation' | 'resolved';
 
 export type AnatomicalQuadrant = 
@@ -9,15 +11,32 @@ export type AnatomicalQuadrant =
   | 'hindlimb'      // Cuadrante Apendicular Posterior (Miembros posteriores y pelvis)
   | 'caudal';       // Cuadrante Caudal (Cola, zona perianal)
 
-export const QUADRANT_LABELS: Record<AnatomicalQuadrant, string> = {
-  cranial: 'Cuadrante Craneal (Cabeza y Cuello)',
-  thoracic: 'Cuadrante Torácico (Pecho y Cardiorrespiratorio)',
-  dorsal: 'Cuadrante Dorsal (Columna y Lomo)',
-  abdominal: 'Cuadrante Abdominal (Vientre y Digestivo)',
-  forelimb: 'Cuadrante Anterior (Miembros Delanteros)',
-  hindlimb: 'Cuadrante Posterior (Caderas y Patas Traseras)',
-  caudal: 'Cuadrante Caudal (Cola y Región Perianal)'
+export const QUADRANT_LABELS_BY_LANG: Record<AppLanguage, Record<AnatomicalQuadrant, string>> = {
+  es: {
+    cranial: 'Cuadrante Craneal (Cabeza y Cuello)',
+    thoracic: 'Cuadrante Torácico (Pecho y Cardiorrespiratorio)',
+    dorsal: 'Cuadrante Dorsal (Columna y Lomo)',
+    abdominal: 'Cuadrante Abdominal (Vientre y Digestivo)',
+    forelimb: 'Cuadrante Anterior (Miembros Delanteros)',
+    hindlimb: 'Cuadrante Posterior (Caderas y Patas Traseras)',
+    caudal: 'Cuadrante Caudal (Cola y Región Perianal)',
+  },
+  en: {
+    cranial: 'Cranial Quadrant (Head & Neck)',
+    thoracic: 'Thoracic Quadrant (Chest & Cardiorespiratory)',
+    dorsal: 'Dorsal Quadrant (Spine & Back)',
+    abdominal: 'Abdominal Quadrant (Abdomen & Digestive)',
+    forelimb: 'Forelimb Quadrant (Front Limbs)',
+    hindlimb: 'Hindlimb Quadrant (Hips & Hind Legs)',
+    caudal: 'Caudal Quadrant (Tail & Perianal Region)',
+  },
 };
+
+export function getQuadrantLabels(lang: AppLanguage = getCurrentLanguage()): Record<AnatomicalQuadrant, string> {
+  return QUADRANT_LABELS_BY_LANG[lang];
+}
+
+export const QUADRANT_LABELS: Record<AnatomicalQuadrant, string> = QUADRANT_LABELS_BY_LANG.es;
 
 export interface CustomAnatomicalPoint {
   id: string;

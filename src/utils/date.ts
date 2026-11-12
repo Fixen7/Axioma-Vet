@@ -1,3 +1,5 @@
+import { getCurrentLanguage, getIntlLocale, pickLang } from '../i18n';
+
 /**
  * Parsea un string de fecha asegurando que si es formato YYYY-MM-DD
  * se interprete en la zona horaria local en lugar de UTC.
@@ -7,18 +9,13 @@ export const parseLocalDate = (dateStr: string | Date): Date => {
   if (!dateStr) return new Date();
   if (dateStr instanceof Date) return dateStr;
   
-  // Si es solo fecha YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     const [year, month, day] = dateStr.split('-');
     return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
   }
   
-  // Si viene de Supabase como timestamp pero a veces iOS molesta,
-  // Date constructor normalmente lo maneja si tiene T y Z o offset.
-  // Solo devolvemos new Date() para el resto.
   const date = new Date(dateStr);
   
-  // Fallback si es Invalid Date (pasa en algunos navegadores viejos con strings SQL)
   if (isNaN(date.getTime()) && typeof dateStr === 'string') {
     const normalized = dateStr.replace(' ', 'T');
     return new Date(normalized);
@@ -28,7 +25,7 @@ export const parseLocalDate = (dateStr: string | Date): Date => {
 };
 
 /**
- * Formatea una fecha a string amigable local, ej: "13 ago 2026"
+ * Formatea una fecha a string amigable local, ej: "13 ago 2026" / "Aug 13, 2026"
  * Auto-detecta si el string incluye tiempo o se puede forzar con includeTime
  */
 export const formatLocalDate = (dateInput: string | Date, includeTime: boolean = false): string => {
@@ -44,7 +41,7 @@ export const formatLocalDate = (dateInput: string | Date, includeTime: boolean =
     options.minute = '2-digit';
   }
   
-  return new Intl.DateTimeFormat('es-ES', options).format(date);
+  return new Intl.DateTimeFormat(getIntlLocale(), options).format(date);
 };
 
 /**
@@ -67,7 +64,6 @@ export const getLocalDateString = (): string => {
 export const getLocalDatetimeString = (dateInput?: string | Date): string => {
   const date = dateInput ? new Date(dateInput) : new Date();
   
-  // En caso de que el dateInput sea inválido, usamos la fecha actual
   if (isNaN(date.getTime())) {
     const fallback = new Date();
     return `${fallback.getFullYear()}-${String(fallback.getMonth() + 1).padStart(2, '0')}-${String(fallback.getDate()).padStart(2, '0')}T${String(fallback.getHours()).padStart(2, '0')}:${String(fallback.getMinutes()).padStart(2, '0')}`;
@@ -98,10 +94,11 @@ export const toUTCDateTime = (localDatetimeStr: string): string => {
  * Calcula la edad de un paciente en base a su fecha de nacimiento
  */
 export const calculateAge = (birthDate: string | Date | undefined): string => {
-  if (!birthDate) return 'Desconocida';
+  const lang = getCurrentLanguage();
+  if (!birthDate) return pickLang('Desconocida', 'Unknown', lang);
   
   const birth = typeof birthDate === 'string' ? new Date(birthDate) : birthDate;
-  if (isNaN(birth.getTime())) return 'Desconocida';
+  if (isNaN(birth.getTime())) return pickLang('Desconocida', 'Unknown', lang);
   
   const today = new Date();
   let years = today.getFullYear() - birth.getFullYear();
@@ -111,15 +108,20 @@ export const calculateAge = (birthDate: string | Date | undefined): string => {
     years--;
     months += 12;
   }
+
+  const monthWord = (n: number) =>
+    lang === 'en' ? (n === 1 ? 'month' : 'months') : (n === 1 ? 'mes' : 'meses');
+  const yearWord = (n: number) =>
+    lang === 'en' ? (n === 1 ? 'year' : 'years') : (n === 1 ? 'año' : 'años');
   
   if (years === 0) {
-    if (months === 0) return 'Menos de 1 mes';
-    return `${months} ${months === 1 ? 'mes' : 'meses'}`;
+    if (months === 0) return pickLang('Menos de 1 mes', 'Less than 1 month', lang);
+    return `${months} ${monthWord(months)}`;
   }
   
   if (months === 0) {
-    return `${years} ${years === 1 ? 'año' : 'años'}`;
+    return `${years} ${yearWord(years)}`;
   }
   
-  return `${years} ${years === 1 ? 'año' : 'años'}, ${months} ${months === 1 ? 'mes' : 'meses'}`;
+  return `${years} ${yearWord(years)}, ${months} ${monthWord(months)}`;
 };

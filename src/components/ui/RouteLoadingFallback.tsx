@@ -1,8 +1,10 @@
 import React from 'react';
+import { useTranslation } from '../../i18n';
 
-export const RouteLoadingFallback: React.FC<{ message?: string }> = ({ 
-  message = 'Cargando módulo clínico...' 
-}) => {
+export const RouteLoadingFallback: React.FC<{ message?: string }> = ({ message }) => {
+  const { t } = useTranslation();
+  const displayMessage = message ?? t('Cargando módulo clínico...', 'Loading clinical module...');
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-center p-4 select-none animate-in fade-in duration-200">
       <div className="relative flex items-center justify-center mb-6">
@@ -22,7 +24,7 @@ export const RouteLoadingFallback: React.FC<{ message?: string }> = ({
           AXIOMA <span className="text-emerald-400 font-medium">DYNAMICS</span>
         </h3>
         <p className="text-slate-400 text-xs font-medium mt-1 animate-pulse">
-          {message}
+          {displayMessage}
         </p>
       </div>
     </div>

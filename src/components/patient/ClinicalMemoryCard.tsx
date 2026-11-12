@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Sparkles, TrendingDown, TrendingUp, Calendar, Pill, ChevronDown, ChevronUp, AlertCircle, Info, Search } from 'lucide-react';
 import type { ClinicalMemoryAnalysis } from '../../utils/clinicalMemory';
 import { formatLocalDate } from '../../utils/date';
+import { useTranslation } from '../../i18n';
 
 interface ClinicalMemoryCardProps {
   memory: ClinicalMemoryAnalysis;
@@ -10,6 +11,7 @@ interface ClinicalMemoryCardProps {
 }
 
 export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: ClinicalMemoryCardProps) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(true);
 
   if (isLoading) {
@@ -41,10 +43,10 @@ export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: Cl
           </div>
           <div>
             <h3 className="text-base md:text-lg text-[#131b2e] m-0 font-black">
-              Memoria Clínica
+              {t('Memoria Clínica', 'Clinical Memory')}
             </h3>
             <p className="text-xs text-[#4a4455] m-0 mt-0.5 font-bold">
-              {hasFacts ? 'Hechos y evolución registrados' : 'Sin alertas clínicas activas'}
+              {hasFacts ? t('Hechos y evolución registrados', 'Recorded facts & evolution') : t('Sin alertas clínicas activas', 'No active clinical alerts')}
             </p>
           </div>
         </div>
@@ -58,17 +60,17 @@ export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: Cl
                 onOpenSimilarCases();
               }}
               className="text-xs px-2.5 py-1.5 rounded-xl border-2 border-primary/40 bg-primary/5 text-primary hover:bg-primary/15 transition-colors flex items-center gap-1.5 font-black cursor-pointer shadow-2xs"
-              title="Buscar antecedentes y casos similares en la clínica"
+              title={t('Buscar antecedentes y casos similares en la clínica', 'Search medical history and similar cases in the clinic')}
             >
               <Search className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Casos Similares</span>
+              <span className="hidden sm:inline">{t('Casos Similares', 'Similar Cases')}</span>
             </button>
           )}
 
           <button 
             type="button"
             className="text-[#131b2e] hover:text-black p-1.5 rounded-xl hover:bg-slate-100 transition-colors"
-            aria-label={isExpanded ? 'Colapsar memoria' : 'Expandir memoria'}
+            aria-label={isExpanded ? t('Colapsar memoria', 'Collapse memory') : t('Expandir memoria', 'Expand memory')}
           >
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
@@ -81,15 +83,15 @@ export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: Cl
           {!hasFacts ? (
             <div className="py-6 px-4 flex flex-col items-center justify-center text-center gap-2 text-xs text-[#4a4455]">
               <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-xs mb-1"></div>
-              <p className="font-black text-[#131b2e] m-0 text-sm">Historial general estable.</p>
-              <p className="text-[#4a4455] m-0 font-semibold">El paciente no presenta alertas de peso, tratamientos activos ni controles pendientes.</p>
+              <p className="font-black text-[#131b2e] m-0 text-sm">{t('Historial general estable.', 'Overall history stable.')}</p>
+              <p className="text-[#4a4455] m-0 font-semibold">{t('El paciente no presenta alertas de peso, tratamientos activos ni controles pendientes.', 'The patient has no weight alerts, active treatments, or pending follow-ups.')}</p>
               {onOpenSimilarCases && (
                 <button
                   type="button"
                   onClick={onOpenSimilarCases}
                   className="text-primary hover:underline font-black text-xs mt-2 cursor-pointer"
                 >
-                  Consultar casos similares de la clínica &rarr;
+                  {t('Consultar casos similares de la clínica', 'Browse similar clinic cases')} &rarr;
                 </button>
               )}
             </div>
@@ -105,26 +107,26 @@ export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: Cl
                 }`}>
                   <div>
                     <div className="flex items-center justify-between mb-2.5">
-                      <span className="text-[11px] font-black uppercase tracking-wider text-[#78350f] flex items-center gap-1.5">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-[#78350f] flex items-center gap-1.5">
                         {weightDelta.deltaKg < 0 ? (
                           <TrendingDown className="w-4 h-4 text-[#b45309] shrink-0" />
                         ) : (
                           <TrendingUp className="w-4 h-4 text-[#047857] shrink-0" />
                         )}
-                        Variación de Peso
+                        {t('Variación de Peso', 'Weight Variation')}
                       </span>
                       <span className="text-[11px] font-black px-2 py-0.5 rounded-lg bg-[#78350f] text-white shadow-xs">
                         {weightDelta.deltaKg > 0 ? `+${weightDelta.deltaKg}` : weightDelta.deltaKg} kg ({weightDelta.deltaPercentage > 0 ? `+${weightDelta.deltaPercentage}` : weightDelta.deltaPercentage}%)
                       </span>
                     </div>
                     <p className="text-xs leading-relaxed font-bold text-[#131b2e] m-0">
-                      De <span className="underline decoration-[#f59e0b] decoration-2 font-black">{weightDelta.previousWeightKg} kg</span> ({formatLocalDate(weightDelta.previousDate)}) a <span className="underline decoration-[#f59e0b] decoration-2 font-black">{weightDelta.currentWeightKg} kg</span> ({formatLocalDate(weightDelta.currentDate)}).
+                      {t('De', 'From')} <span className="underline decoration-[#f59e0b] decoration-2 font-black">{weightDelta.previousWeightKg} kg</span> ({formatLocalDate(weightDelta.previousDate)}) {t('a', 'to')} <span className="underline decoration-[#f59e0b] decoration-2 font-black">{weightDelta.currentWeightKg} kg</span> ({formatLocalDate(weightDelta.currentDate)}).
                     </p>
                   </div>
                   {weightDelta.isSignificantChange && (
                     <div className="mt-2.5 pt-2 border-t border-[#fcd34d] text-xs flex items-center gap-1.5 font-black text-[#78350f]">
                       <Info className="w-4 h-4 shrink-0 text-[#b45309]" />
-                      <span>Variación &ge; 5% registrada entre fechas.</span>
+                      <span>{t('Variación ≥ 5% registrada entre fechas.', '≥ 5% variation recorded between dates.')}</span>
                     </div>
                   )}
                 </div>
@@ -137,19 +139,19 @@ export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: Cl
                     <div className="flex items-center justify-between mb-2.5">
                       <span className="text-[11px] font-black uppercase tracking-wider text-[#1e3a8a] flex items-center gap-1.5">
                         <Calendar className="w-4 h-4 text-[#1d4ed8] shrink-0" />
-                        Control Previo
+                        {t('Control Previo', 'Prior Follow-up')}
                       </span>
                       <span className="text-[11px] font-black px-2 py-0.5 rounded-lg bg-[#1e3a8a] text-white shadow-xs">
                         {formatLocalDate(pendingControl.scheduledControlDate)}
                       </span>
                     </div>
                     <p className="text-xs leading-relaxed font-bold text-[#131b2e] m-0">
-                      Programado en consulta del <span className="font-black text-[#1e3a8a]">{formatLocalDate(pendingControl.originConsultationDate)}</span> sin registro de consulta posterior a esa fecha.
+                      {t('Programado en consulta del', 'Scheduled in consultation on')} <span className="font-black text-[#1e3a8a]">{formatLocalDate(pendingControl.originConsultationDate)}</span> {t('sin registro de consulta posterior a esa fecha.', 'with no subsequent consultation recorded after that date.')}
                     </p>
                   </div>
                   <div className="mt-2.5 pt-2 border-t border-[#bfdbfe] text-xs flex items-center gap-1.5 font-black text-[#1e3a8a]">
                     <Info className="w-4 h-4 shrink-0 text-[#1d4ed8]" />
-                    <span>Control clínico pendiente de atención.</span>
+                    <span>{t('Control clínico pendiente de atención.', 'Clinical follow-up pending attention.')}</span>
                   </div>
                 </div>
               )}
@@ -161,18 +163,18 @@ export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: Cl
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[11px] font-black uppercase tracking-wider text-[#131b2e] flex items-center gap-1.5">
                         <Pill className="w-4 h-4 text-primary shrink-0" />
-                        Último Tratamiento
+                        {t('Último Tratamiento', 'Latest Treatment')}
                       </span>
                     </div>
                     {lastTreatment.hasStructuredPrescription && lastTreatment.prescriptionDetails && (
                       <div className="text-xs mb-2">
-                        <span className="text-[10px] font-black text-primary block uppercase tracking-wider">Receta ({formatLocalDate(lastTreatment.prescriptionDetails.date)})</span>
+                        <span className="text-[10px] font-black text-primary block uppercase tracking-wider">{t('Receta', 'Prescription')} ({formatLocalDate(lastTreatment.prescriptionDetails.date)})</span>
                         <strong className="text-[#131b2e] font-black">{lastTreatment.prescriptionDetails.medication}</strong> - <span className="text-[#4a4455] font-bold">{lastTreatment.prescriptionDetails.dosage}</span>
                       </div>
                     )}
                     {lastTreatment.hasFreeTextTreatment && lastTreatment.freeTextTreatment && (
                       <div className="text-xs">
-                        <span className="text-[10px] font-black text-[#4a4455] block uppercase tracking-wider">Anotación ({formatLocalDate(lastTreatment.freeTextTreatment.date)})</span>
+                        <span className="text-[10px] font-black text-[#4a4455] block uppercase tracking-wider">{t('Anotación', 'Note')} ({formatLocalDate(lastTreatment.freeTextTreatment.date)})</span>
                         <p className="line-clamp-2 text-[#131b2e] font-bold italic mt-1 bg-slate-100 p-2.5 rounded-xl border border-slate-200">
                           "{lastTreatment.freeTextTreatment.text}"
                         </p>
@@ -180,7 +182,7 @@ export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: Cl
                     )}
                   </div>
                   <div className="mt-2.5 pt-2 border-t border-slate-200 text-[11px] font-bold text-[#4a4455]">
-                    Documentado en visita previa.
+                    {t('Documentado en visita previa.', 'Documented in previous visit.')}
                   </div>
                 </div>
               )}
@@ -192,7 +194,7 @@ export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: Cl
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[11px] font-black uppercase tracking-wider text-[#131b2e] flex items-center gap-1.5">
                         <AlertCircle className="w-4 h-4 text-primary shrink-0" />
-                        Observaciones Clínicas
+                        {t('Observaciones Clínicas', 'Clinical Observations')}
                       </span>
                     </div>
                     <ul className="text-xs space-y-1.5 list-disc list-inside">
@@ -204,7 +206,7 @@ export function ClinicalMemoryCard({ memory, isLoading, onOpenSimilarCases }: Cl
                     </ul>
                   </div>
                   <div className="mt-2.5 pt-2 border-t border-slate-200 text-[11px] font-bold text-[#4a4455]">
-                    Notas de manejo documentadas.
+                    {t('Notas de manejo documentadas.', 'Documented handling notes.')}
                   </div>
                 </div>
               )}

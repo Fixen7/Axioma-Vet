@@ -3,9 +3,10 @@ import { Trash2, Edit2, Check, X, Dog, Cat } from 'lucide-react';
 import { 
   type PointSeverity, 
   type AnatomicalQuadrant,
-  QUADRANT_LABELS,
+  getQuadrantLabels,
   detectQuadrant 
 } from '../../utils/customAnatomyPoints';
+import { useTranslation } from '../../i18n';
 
 export interface DraftAnatomyPoint {
   x: number;
@@ -29,9 +30,13 @@ export function AnatomyMarkerEditor({
   initialSpecies,
   points,
   onChange,
-  title = "Marcar puntos anatómicos o cuadrantes",
-  hint = "Haz clic en cualquier parte de la silueta para fijar la zona afectada"
+  title,
+  hint
 }: AnatomyMarkerEditorProps) {
+  const { lang, t } = useTranslation();
+  const quadrantLabels = getQuadrantLabels(lang);
+  const resolvedTitle = title ?? t('Marcar puntos anatómicos o cuadrantes', 'Mark anatomical points or quadrants');
+  const resolvedHint = hint ?? t('Haz clic en cualquier parte de la silueta para fijar la zona afectada', 'Click anywhere on the silhouette to mark the affected area');
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isFelineDefault = (initialSpecies || '').toLowerCase().includes('gato') || 
@@ -77,7 +82,7 @@ export function AnatomyMarkerEditor({
 
     setEditingIndex(null);
     setPointForm({
-      label: QUADRANT_LABELS[detectedQuad].split('(')[0].trim(),
+      label: quadrantLabels[detectedQuad].split('(')[0].trim(),
       type: 'problem',
       quadrant: detectedQuad,
       notes: '',
@@ -89,7 +94,7 @@ export function AnatomyMarkerEditor({
 
   const handleSavePoint = () => {
     if (!pointForm.label.trim()) {
-      alert('Ingresa una descripción o nombre para este punto.');
+      alert(t('Ingresa una descripción o nombre para este punto.', 'Enter a description or name for this point.'));
       return;
     }
 
@@ -161,10 +166,10 @@ export function AnatomyMarkerEditor({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
         <div>
           <h5 className="text-xs tracking-wider text-primary font-black uppercase m-0">
-            {title}
+            {resolvedTitle}
           </h5>
           <p className="text-xs text-[#4a4455] m-0 mt-0.5 font-bold">
-            {hint}
+            {resolvedHint}
           </p>
         </div>
 
@@ -179,7 +184,7 @@ export function AnatomyMarkerEditor({
                   : 'text-[#131b2e] hover:text-black'
               }`}
             >
-              <Dog className="w-3.5 h-3.5" /> Canino
+              <Dog className="w-3.5 h-3.5" /> {t('Canino', 'Canine')}
             </button>
             <button
               type="button"
@@ -190,7 +195,7 @@ export function AnatomyMarkerEditor({
                   : 'text-[#131b2e] hover:text-black'
               }`}
             >
-              <Cat className="w-3.5 h-3.5" /> Felino
+              <Cat className="w-3.5 h-3.5" /> {t('Felino', 'Feline')}
             </button>
           </div>
         </div>
@@ -205,16 +210,16 @@ export function AnatomyMarkerEditor({
             ref={containerRef}
             onClick={handleImageClick}
             className="relative w-full aspect-[16/10] bg-white rounded-xl p-1.5 border-2 border-slate-300 shadow-xs overflow-hidden select-none transition-all cursor-crosshair hover:border-primary"
-            title="Haz clic en cualquier punto para fijar la marca anatómica"
+            title={t('Haz clic en cualquier punto para fijar la marca anatómica', 'Click any point to place the anatomical marker')}
           >
             <img 
               src={currentImage} 
-              alt="Silueta zoomorfa anatómica" 
+              alt={t('Silueta zoomorfa anatómica', 'Anatomical silhouette')} 
               className="w-full h-full object-contain pointer-events-none select-none"
             />
 
             <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg pointer-events-none tracking-wide">
-              🎯 Haz clic en la silueta para marcar un punto
+              🎯 {t('Haz clic en la silueta para marcar un punto', 'Click on the silhouette to mark a point')}
             </div>
 
             {points.map((p, idx) => {
@@ -233,7 +238,7 @@ export function AnatomyMarkerEditor({
                   className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-200 ${
                     isSelected ? 'scale-125 z-30 ring-3 ring-primary ring-offset-2' : 'hover:scale-115 z-20'
                   }`}
-                  title={`${p.label} - ${QUADRANT_LABELS[p.quadrant]}`}
+                  title={`${p.label} - ${quadrantLabels[p.quadrant]}`}
                 >
                   <span className={`flex items-center justify-center rounded-full border-2 transition-all shadow-md w-5 h-5 ${colors.bg} text-white border-white text-[10px] font-black`}>
                     {idx + 1}
@@ -243,7 +248,7 @@ export function AnatomyMarkerEditor({
             })}
           </div>
           <span className="text-xs text-[#4a4455] font-bold mt-1.5 text-center">
-            Haz clic en cualquier parte del cuerpo del animal para registrar la afección o incisión
+            {t('Haz clic en cualquier parte del cuerpo del animal para registrar la afección o incisión', 'Click anywhere on the animal\'s body to record the condition or incision')}
           </span>
         </div>
 
@@ -251,17 +256,17 @@ export function AnatomyMarkerEditor({
         <div className="md:col-span-5 flex flex-col gap-2 w-full">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-wider text-[#131b2e]">
-              Marcas en este registro ({points.length})
+              {t('Marcas en este registro', 'Markers in this record')} ({points.length})
             </span>
             {points.length > 0 && (
-              <span className="text-xs text-[#4a4455] font-bold">Clic para ver/editar</span>
+              <span className="text-xs text-[#4a4455] font-bold">{t('Clic para ver/editar', 'Click to view/edit')}</span>
             )}
           </div>
 
           {points.length === 0 ? (
             <div className="py-8 px-3 bg-white rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center text-center gap-1.5 text-xs text-[#4a4455]">
-              <p className="m-0 font-black text-[#131b2e] text-xs">Sin marcas anatómicas fijadas.</p>
-              <p className="text-xs m-0 font-medium">Haz clic en la silueta izquierda para marcar zonas anatómicas afectadas.</p>
+              <p className="m-0 font-black text-[#131b2e] text-xs">{t('Sin marcas anatómicas fijadas.', 'No anatomical markers placed.')}</p>
+              <p className="text-xs m-0 font-medium">{t('Haz clic en la silueta izquierda para marcar zonas anatómicas afectadas.', 'Click the silhouette on the left to mark affected anatomical areas.')}</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-200 border-2 border-slate-300 rounded-xl overflow-hidden bg-white max-h-[190px] overflow-y-auto shadow-2xs">
@@ -283,7 +288,7 @@ export function AnatomyMarkerEditor({
                       </span>
                       <div className="truncate">
                         <p className="font-bold text-[#131b2e] m-0 truncate leading-tight text-xs">{p.label}</p>
-                        <p className="text-[11px] text-primary font-bold m-0 truncate">{QUADRANT_LABELS[p.quadrant]}</p>
+                        <p className="text-[11px] text-primary font-bold m-0 truncate">{quadrantLabels[p.quadrant]}</p>
                       </div>
                     </div>
 
@@ -292,7 +297,7 @@ export function AnatomyMarkerEditor({
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleStartEdit(idx); }}
                         className="p-1 text-[#4a4455] hover:text-primary rounded hover:bg-slate-100"
-                        title="Editar"
+                        title={t('Editar', 'Edit')}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
@@ -300,7 +305,7 @@ export function AnatomyMarkerEditor({
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleDeletePoint(idx); }}
                         className="p-1 text-[#4a4455] hover:text-red-600 rounded hover:bg-red-50"
-                        title="Eliminar"
+                        title={t('Eliminar', 'Delete')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -321,7 +326,7 @@ export function AnatomyMarkerEditor({
             
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <h4 className="font-black text-base text-[#131b2e] m-0">
-                {editingIndex !== null ? 'Editar Marca Anatómica' : 'Registrar Marca en Silueta'}
+                {editingIndex !== null ? t('Editar Marca Anatómica', 'Edit Anatomical Marker') : t('Registrar Marca en Silueta', 'Record Marker on Silhouette')}
               </h4>
               <button
                 type="button"
@@ -335,11 +340,11 @@ export function AnatomyMarkerEditor({
             <div className="flex flex-col gap-3.5">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-black uppercase tracking-wider text-[#131b2e]">
-                  Hallazgo / Procedimiento *
+                  {t('Hallazgo / Procedimiento *', 'Finding / Procedure *')}
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej: Dolor palpación, Otitis, Masa 2cm, Incisión..."
+                  placeholder={t('Ej: Dolor palpación, Otitis, Masa 2cm, Incisión...', 'e.g. Palpation pain, Otitis, 2cm mass, Incision...')}
                   value={pointForm.label}
                   onChange={e => setPointForm({ ...pointForm, label: e.target.value })}
                   className="w-full h-11 px-3.5 rounded-xl bg-white border-2 border-slate-300 focus:border-primary outline-none text-xs font-bold text-[#131b2e]"
@@ -350,14 +355,14 @@ export function AnatomyMarkerEditor({
               {/* Selector explícito de Cuadrante Anatómico */}
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-black uppercase tracking-wider text-[#131b2e]">
-                  Cuadrante Anatómico (Detectado automáticamente)
+                  {t('Cuadrante Anatómico (Detectado automáticamente)', 'Anatomical Quadrant (Auto-detected)')}
                 </label>
                 <select
                   value={pointForm.quadrant}
                   onChange={e => setPointForm({ ...pointForm, quadrant: e.target.value as AnatomicalQuadrant })}
                   className="w-full h-11 px-3.5 rounded-xl bg-white border-2 border-slate-300 focus:border-primary outline-none text-xs text-[#131b2e] font-bold"
                 >
-                  {Object.entries(QUADRANT_LABELS).map(([k, label]) => (
+                  {Object.entries(quadrantLabels).map(([k, label]) => (
                     <option key={k} value={k}>{label}</option>
                   ))}
                 </select>
@@ -365,7 +370,7 @@ export function AnatomyMarkerEditor({
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-black uppercase tracking-wider text-[#131b2e]">
-                  Severidad / Estado
+                  {t('Severidad / Estado', 'Severity / Status')}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
@@ -375,7 +380,7 @@ export function AnatomyMarkerEditor({
                       pointForm.type === 'problem' ? 'bg-[#dc2626] text-white border-[#dc2626] shadow-xs' : 'bg-white text-[#131b2e] border-slate-300 hover:bg-slate-100'
                     }`}
                   >
-                    🔴 Alerta
+                    🔴 {t('Alerta', 'Alert')}
                   </button>
                   <button
                     type="button"
@@ -384,7 +389,7 @@ export function AnatomyMarkerEditor({
                       pointForm.type === 'observation' ? 'bg-[#4f46e5] text-white border-[#4f46e5] shadow-xs' : 'bg-white text-[#131b2e] border-slate-300 hover:bg-slate-100'
                     }`}
                   >
-                    🟣 Observación
+                    🟣 {t('Observación', 'Observation')}
                   </button>
                   <button
                     type="button"
@@ -393,18 +398,18 @@ export function AnatomyMarkerEditor({
                       pointForm.type === 'resolved' ? 'bg-[#059669] text-white border-[#059669] shadow-xs' : 'bg-white text-[#131b2e] border-slate-300 hover:bg-slate-100'
                     }`}
                   >
-                    🟢 Resuelto
+                    🟢 {t('Resuelto', 'Resolved')}
                   </button>
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-black uppercase tracking-wider text-[#131b2e]">
-                  Nota Adicional (Opcional)
+                  {t('Nota Adicional (Opcional)', 'Additional Note (Optional)')}
                 </label>
                 <input
                   type="text"
-                  placeholder="Detalles de tamaño, evolución..."
+                  placeholder={t('Detalles de tamaño, evolución...', 'Size details, evolution...')}
                   value={pointForm.notes}
                   onChange={e => setPointForm({ ...pointForm, notes: e.target.value })}
                   className="w-full h-10 px-3.5 rounded-xl bg-white border-2 border-slate-300 focus:border-primary outline-none text-xs text-[#131b2e] font-semibold"
@@ -418,7 +423,7 @@ export function AnatomyMarkerEditor({
                 onClick={() => setShowPointModal(false)}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-[#4a4455] hover:bg-slate-100 cursor-pointer"
               >
-                Cancelar
+                {t('Cancelar', 'Cancel')}
               </button>
               <button
                 type="button"
@@ -426,7 +431,7 @@ export function AnatomyMarkerEditor({
                 className="px-5 py-2 rounded-xl text-xs font-black bg-primary text-white hover:opacity-95 flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
                 <Check className="w-4 h-4" />
-                <span>Guardar Marca</span>
+                <span>{t('Guardar Marca', 'Save Marker')}</span>
               </button>
             </div>
           </div>

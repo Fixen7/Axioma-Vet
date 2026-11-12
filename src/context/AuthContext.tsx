@@ -6,6 +6,7 @@ import { supabase } from '../services/supabase';
 import { getModuleAccessStatus } from '../services/coreAccessClient';
 import type { ModuleAccessStatus } from '../services/coreAccessClient';
 import { telemetry } from '../services/telemetry';
+import { syncCoreLanguagePreference, useTranslation } from '../i18n';
 
 interface AuthContextType {
   user: User | null;
@@ -21,6 +22,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [coreUser, setCoreUser] = useState<AuthContextType['coreUser']>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -91,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.user) {
         setCoreUser(data.user);
       }
+      syncCoreLanguagePreference(data.user?.language);
       
       const hasStockAccess = data.entitlements && data.entitlements.includes("stock");
       setHasStockAccess(hasStockAccess);
@@ -279,18 +282,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             <h2 className="text-2xl font-bold text-on-surface mb-2 font-display">
               {moduleAccess?.commercial?.phase === 'trial_expired'
-                ? 'Tu periodo de prueba ha finalizado'
+                ? t('Tu periodo de prueba ha finalizado', 'Your free trial has ended')
                 : moduleAccess?.commercial?.phase === 'subscription_past_due' || moduleAccess?.commercial?.phase === 'subscription_unpaid'
-                  ? 'Suscripción pendiente de pago'
-                  : 'Acceso a Axioma Vet'}
+                  ? t('Suscripción pendiente de pago', 'Subscription payment past due')
+                  : t('Acceso a Axioma Vet', 'Access to Axioma Vet')}
             </h2>
 
             <p className="text-on-surface-variant mb-6 text-sm leading-relaxed">
               {moduleAccess?.commercial?.phase === 'trial_expired'
-                ? `Esperamos que hayas disfrutado tus 7 días de prueba. Para continuar registrando historias clínicas y pacientes en ${activeWorkspace?.name || 'tu clínica'}, activa tu plan.`
+                ? t(
+                    `Esperamos que hayas disfrutado tus 7 días de prueba. Para continuar registrando historias clínicas y pacientes en ${activeWorkspace?.name || 'tu clínica'}, activa tu plan.`,
+                    `We hope you enjoyed your 7-day free trial. To continue recording clinical histories and patients in ${activeWorkspace?.name || 'your clinic'}, please activate a plan.`
+                  )
                 : moduleAccess?.commercial?.phase === 'subscription_past_due' || moduleAccess?.commercial?.phase === 'subscription_unpaid'
-                  ? 'No pudimos procesar la renovación de tu suscripción. Regulariza tu método de pago para reanudar el acceso.'
-                  : `Axioma Vet no está activo para el espacio de trabajo "${activeWorkspace?.name || 'seleccionado'}". Adquiere un plan para habilitarlo de inmediato.`}
+                  ? t(
+                      'No pudimos procesar la renovación de tu suscripción. Regulariza tu método de pago para reanudar el acceso.',
+                      'We could not process your subscription renewal. Please update your payment method to resume access.'
+                    )
+                  : t(
+                      `Axioma Vet no está activo para el espacio de trabajo "${activeWorkspace?.name || 'seleccionado'}". Adquiere un plan para habilitarlo de inmediato.`,
+                      `Axioma Vet is not active for the "${activeWorkspace?.name || 'selected'}" workspace. Purchase a plan to enable it right away.`
+                    )}
             </p>
 
             <div className="space-y-3">
@@ -301,7 +313,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }}
                 className="w-full bg-primary hover:bg-primary/90 text-on-primary font-bold py-3.5 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Ver Planes y Suscribirme (Desde $15/mes)</span>
+                <span>{t('Ver Planes y Suscribirme (Desde $15/mes)', 'View Plans & Subscribe (From $15/mo)')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
@@ -313,7 +325,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   }}
                   className="w-full bg-surface-variant hover:bg-surface-variant/80 text-on-surface-variant font-semibold py-3 rounded-xl transition-colors cursor-pointer"
                 >
-                  Ir a Axioma Stock
+                  {t('Ir a Axioma Stock', 'Go to Axioma Stock')}
                 </button>
               )}
 
@@ -324,14 +336,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }}
                 className="w-full bg-surface-variant hover:bg-surface-variant/80 text-on-surface-variant font-semibold py-3 rounded-xl transition-colors cursor-pointer"
               >
-                Gestionar mi cuenta Axioma
+                {t('Gestionar mi cuenta Axioma', 'Manage my Axioma account')}
               </button>
 
               <button 
                 onClick={signOut}
                 className="w-full bg-transparent hover:bg-surface-variant/50 text-outline font-semibold py-2.5 rounded-xl transition-colors cursor-pointer text-sm"
               >
-                Cerrar sesión
+                {t('Cerrar sesión', 'Sign out')}
               </button>
             </div>
           </div>

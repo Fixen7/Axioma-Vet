@@ -11,13 +11,16 @@ import {
   syncPointsForSource, 
   removePointsForSource, 
   getPointsBySource,
-  QUADRANT_LABELS,
+  getQuadrantLabels,
   embedAnatomyPointsInText,
   extractAnatomyPointsFromText,
   stripAnatomyMeta
 } from '../../utils/customAnatomyPoints';
+import { useTranslation } from '../../i18n';
 
 export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: string, isDeceased: boolean }) {
+  const { lang, t } = useTranslation();
+  const quadrantLabels = getQuadrantLabels(lang);
   const { getConsultations, saveConsultation, deleteConsultation, patients } = useVetContext();
   const patient = patients.find(p => p.id === patientId);
 
@@ -107,7 +110,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
 
   const handleSubmit = async () => {
     if (!formData.observation || !formData.diagnosis || !formData.treatment) {
-      alert('Por favor completa las observaciones, el diagnóstico y el tratamiento.');
+      alert(t('Por favor completa las observaciones, el diagnóstico y el tratamiento.', 'Please complete the observations, diagnosis, and treatment.'));
       return;
     }
 
@@ -191,13 +194,13 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm("¿Seguro que quieres eliminar esta consulta? Esta acción no se puede deshacer.")) {
+    if (window.confirm(t('¿Seguro que quieres eliminar esta consulta? Esta acción no se puede deshacer.', 'Are you sure you want to delete this consultation? This action cannot be undone.'))) {
       try {
         await deleteConsultation(id);
         removePointsForSource(patientId, id);
         loadConsultations();
       } catch (error: any) {
-        alert("Error al eliminar: " + error.message);
+        alert(t('Error al eliminar: ', 'Error deleting: ') + error.message);
       }
     }
   };
@@ -215,15 +218,25 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
     }
   };
 
-  if (isLoading) return <div className="py-8 text-outline animate-pulse text-center font-medium">Cargando historia clínica...</div>;
+  const translateReason = (reason: string) => {
+    switch (reason) {
+      case 'Emergencia': return t('Emergencia', 'Emergency');
+      case 'Control': return t('Control', 'Follow-up');
+      case 'Consulta': return t('Consulta', 'Consultation');
+      case 'Otro': return t('Otro', 'Other');
+      default: return reason;
+    }
+  };
+
+  if (isLoading) return <div className="py-8 text-outline animate-pulse text-center font-medium">{t('Cargando historia clínica...', 'Loading clinical history...')}</div>;
 
   return (
     <div className="flex flex-col gap-6 relative">
       <div className="flex justify-between items-center bg-surface sticky top-0 z-10 py-2 border-b border-surface-variant md:border-none md:static md:bg-transparent">
-        <h3 className="font-headline-lg m-0 text-on-surface">Historia Clínica</h3>
+        <h3 className="font-headline-lg m-0 text-on-surface">{t('Historia Clínica', 'Clinical History')}</h3>
         {!isDeceased && !isAdding && (
           <Button variant="primary" onClick={() => { setEditId(null); setDraftAnatomyPoints([]); setShowAnatomySection(false); setIsAdding(true); }} className="shadow-sm">
-            <PlusCircle className="w-5 h-5 mr-1" /> Nueva Consulta
+            <PlusCircle className="w-5 h-5 mr-1" /> {t('Nueva Consulta', 'New Consultation')}
           </Button>
         )}
       </div>
@@ -236,9 +249,9 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm font-bold text-white">Borrador de consulta no guardado</p>
+              <p className="text-sm font-bold text-white">{t('Borrador de consulta no guardado', 'Unsaved consultation draft')}</p>
               <p className="text-xs text-amber-300/80">
-                Detectamos notas redactadas previamente ({pendingDraft.data.formData.reason || 'Consulta'}). ¿Deseas recuperarlas?
+                {t('Detectamos notas redactadas previamente', 'We found previously written notes')} ({translateReason(pendingDraft.data.formData.reason || 'Consulta')}). {t('¿Deseas recuperarlas?', 'Would you like to restore them?')}
               </p>
             </div>
           </div>
@@ -248,14 +261,14 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
               onClick={handleRestoreDraft}
               className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg transition-colors cursor-pointer shadow-sm active:scale-95"
             >
-              Recuperar borrador
+              {t('Recuperar borrador', 'Restore draft')}
             </button>
             <button
               type="button"
               onClick={discardDraft}
               className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs rounded-lg transition-colors cursor-pointer"
             >
-              Descartar
+              {t('Descartar', 'Discard')}
             </button>
           </div>
         </div>
@@ -265,37 +278,37 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
         <div className="bg-surface rounded-2xl p-5 md:p-8 flex flex-col gap-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-surface-variant transition-all">
           <div className="flex items-center justify-between border-b border-surface-variant pb-4">
             <h4 className="font-headline-md m-0 text-primary">
-              {editId ? 'Editar Consulta' : 'Registrar Nueva Consulta Médica'}
+              {editId ? t('Editar Consulta', 'Edit Consultation') : t('Registrar Nueva Consulta Médica', 'Record New Medical Consultation')}
             </h4>
             <div className="flex items-center gap-2">
               {lastSavedAt && (
                 <span className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium bg-emerald-500/10 px-2.5 py-1 rounded-full">
-                  ✓ Borrador respaldado
+                  ✓ {t('Borrador respaldado', 'Draft saved')}
                 </span>
               )}
               <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-medium">
-                Expediente Digital
+                {t('Expediente Digital', 'Digital Record')}
               </span>
             </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="flex flex-col gap-1.5">
-              <label className="font-label-sm uppercase tracking-wider text-outline">Motivo de Consulta *</label>
+              <label className="font-label-sm uppercase tracking-wider text-outline">{t('Motivo de Consulta *', 'Consultation Reason *')}</label>
               <select 
                 name="reason" 
                 value={formData.reason} 
                 onChange={handleChange}
                 className="w-full h-11 px-3 rounded-xl bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow text-on-surface"
               >
-                <option value="Consulta">Consulta General</option>
-                <option value="Control">Control / Seguimiento</option>
-                <option value="Emergencia">Emergencia / Urgencia</option>
-                <option value="Otro">Otro</option>
+                <option value="Consulta">{t('Consulta General', 'General Consultation')}</option>
+                <option value="Control">{t('Control / Seguimiento', 'Follow-up / Checkup')}</option>
+                <option value="Emergencia">{t('Emergencia / Urgencia', 'Emergency / Urgent')}</option>
+                <option value="Otro">{t('Otro', 'Other')}</option>
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="font-label-sm uppercase tracking-wider text-outline">Próximo Control (Opcional)</label>
+              <label className="font-label-sm uppercase tracking-wider text-outline">{t('Próximo Control (Opcional)', 'Next Follow-up (Optional)')}</label>
               <input 
                 type="date" 
                 name="nextControl" 
@@ -307,14 +320,14 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="font-label-sm uppercase tracking-wider text-outline">Observaciones y Constantes Clínicas *</label>
+            <label className="font-label-sm uppercase tracking-wider text-outline">{t('Observaciones y Constantes Clínicas *', 'Observations & Clinical Vitals *')}</label>
             <textarea 
               name="observation" 
               value={formData.observation} 
               onChange={handleChange}
               rows={3}
               className="w-full p-3 rounded-xl bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-y transition-shadow text-on-surface"
-              placeholder="Síntomas, constantes vitales, estado general, peso..."
+              placeholder={t('Síntomas, constantes vitales, estado general, peso...', 'Symptoms, vital signs, general condition, weight...')}
             />
           </div>
 
@@ -327,10 +340,10 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
             >
               <span className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                <span>Marcar Cuadrantes Anatómicos en esta Consulta ({draftAnatomyPoints.length} marcados)</span>
+                <span>{t('Marcar Cuadrantes Anatómicos en esta Consulta', 'Mark Anatomical Quadrants in this Consultation')} ({draftAnatomyPoints.length} {t('marcados', 'marked')})</span>
               </span>
               <span className="text-[11px] underline font-bold">
-                {showAnatomySection ? 'Ocultar silueta' : 'Abrir silueta anatómica ▾'}
+                {showAnatomySection ? t('Ocultar silueta', 'Hide silhouette') : t('Abrir silueta anatómica ▾', 'Open anatomical silhouette ▾')}
               </span>
             </button>
 
@@ -339,39 +352,39 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
                 initialSpecies={patient?.species || ''}
                 points={draftAnatomyPoints}
                 onChange={setDraftAnatomyPoints}
-                title="Zonas Anatómicas Afectadas en esta Consulta"
-                hint="Haz clic en cualquier parte de la silueta para fijar la zona afectada e indicar su cuadrante"
+                title={t('Zonas Anatómicas Afectadas en esta Consulta', 'Affected Anatomical Areas in this Consultation')}
+                hint={t('Haz clic en cualquier parte de la silueta para fijar la zona afectada e indicar su cuadrante', 'Click anywhere on the silhouette to mark the affected area and its quadrant')}
               />
             )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="font-label-sm uppercase tracking-wider text-outline">Diagnóstico *</label>
+            <label className="font-label-sm uppercase tracking-wider text-outline">{t('Diagnóstico *', 'Diagnosis *')}</label>
             <textarea 
               name="diagnosis" 
               value={formData.diagnosis} 
               onChange={handleChange}
               rows={2}
               className="w-full p-3 rounded-xl bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-y transition-shadow text-on-surface"
-              placeholder="Diagnóstico presuntivo o definitivo..."
+              placeholder={t('Diagnóstico presuntivo o definitivo...', 'Presumptive or definitive diagnosis...')}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="font-label-sm uppercase tracking-wider text-outline">Tratamiento e Indicaciones *</label>
+            <label className="font-label-sm uppercase tracking-wider text-outline">{t('Tratamiento e Indicaciones *', 'Treatment & Instructions *')}</label>
             <textarea 
               name="treatment" 
               value={formData.treatment} 
               onChange={handleChange}
               rows={3}
               className="w-full p-3 rounded-xl bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-y transition-shadow text-on-surface"
-              placeholder="Medicamentos aplicados en clínica e indicaciones para la casa..."
+              placeholder={t('Medicamentos aplicados en clínica e indicaciones para la casa...', 'In-clinic medications and home care instructions...')}
             />
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-surface-variant mt-2">
-            <Button variant="ghost" onClick={handleCancel}>Cancelar</Button>
-            <Button variant="primary" onClick={handleSubmit}>{editId ? 'Guardar Cambios' : 'Registrar Consulta'}</Button>
+            <Button variant="ghost" onClick={handleCancel}>{t('Cancelar', 'Cancel')}</Button>
+            <Button variant="primary" onClick={handleSubmit}>{editId ? t('Guardar Cambios', 'Save Changes') : t('Registrar Consulta', 'Record Consultation')}</Button>
           </div>
         </div>
       )}
@@ -381,7 +394,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
           <div className="w-16 h-16 bg-surface-variant rounded-full flex items-center justify-center mb-4">
             <FileText className="w-8 h-8 opacity-60" />
           </div>
-          <p className="font-body-lg m-0 text-on-surface-variant">Aún no hay consultas registradas.</p>
+          <p className="font-body-lg m-0 text-on-surface-variant">{t('Aún no hay consultas registradas.', 'No consultations recorded yet.')}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -407,7 +420,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
                 >
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className={`px-2.5 py-1 rounded-full border text-xs font-bold uppercase tracking-wider ${getReasonColor(consultation.reason)}`}>
-                      {consultation.reason}
+                      {translateReason(consultation.reason)}
                     </div>
                     <span className="font-body-sm text-on-surface-variant flex items-center gap-1.5 whitespace-nowrap">
                       <Calendar className="w-4 h-4 opacity-70" /> 
@@ -415,7 +428,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
                     </span>
                     {consultationPoints.length > 0 && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                        <MapPin className="w-3 h-3" /> {consultationPoints.length} {consultationPoints.length === 1 ? 'cuadrante' : 'cuadrantes'}
+                        <MapPin className="w-3 h-3" /> {consultationPoints.length} {consultationPoints.length === 1 ? t('cuadrante', 'quadrant') : t('cuadrantes', 'quadrants')}
                       </span>
                     )}
                   </div>
@@ -430,7 +443,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
                     <div className="flex items-center gap-3">
                       {consultation.nextControl && !isExpanded && (
                         <div className="hidden md:flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-md">
-                          Próx: {formatLocalDate(consultation.nextControl)}
+                          {t('Próx:', 'Next:')} {formatLocalDate(consultation.nextControl)}
                         </div>
                       )}
                       <div className="text-outline hover:text-on-surface transition-colors bg-surface-variant p-1.5 rounded-full">
@@ -446,7 +459,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
                     
                     {consultation.nextControl && (
                       <div className="md:hidden inline-flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 px-2.5 py-1.5 rounded-md border border-primary/20 self-start">
-                        <Calendar className="w-3.5 h-3.5" /> Próximo Control: {formatLocalDate(consultation.nextControl)}
+                        <Calendar className="w-3.5 h-3.5" /> {t('Próximo Control:', 'Next Follow-up:')} {formatLocalDate(consultation.nextControl)}
                       </div>
                     )}
 
@@ -455,14 +468,14 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
                       <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 flex flex-col gap-2">
                         <span className="text-[10px] uppercase font-bold tracking-wider text-primary flex items-center gap-1.5">
                           <MapPin className="w-3.5 h-3.5" />
-                          Cuadrantes y Hallazgos Anatómicos ({consultationPoints.length})
+                          {t('Cuadrantes y Hallazgos Anatómicos', 'Anatomical Quadrants & Findings')} ({consultationPoints.length})
                         </span>
                         <div className="flex flex-wrap gap-2">
                           {consultationPoints.map((pt, i) => (
                             <div key={i} className="text-xs px-2.5 py-1 rounded-lg bg-surface-container-lowest border border-outline-variant/40 flex items-center gap-1.5 shadow-2xs">
                               <span className="w-2 h-2 rounded-full bg-red-500"></span>
                               <span className="font-bold text-on-surface">{pt.label}</span>
-                              <span className="text-primary text-[10px] font-medium">({QUADRANT_LABELS[pt.quadrant]})</span>
+                              <span className="text-primary text-[10px] font-medium">({quadrantLabels[pt.quadrant]})</span>
                             </div>
                           ))}
                         </div>
@@ -472,7 +485,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex flex-col gap-1.5">
                         <h5 className="font-label-sm uppercase tracking-wider text-outline m-0 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span> Observaciones
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span> {t('Observaciones', 'Observations')}
                         </h5>
                         <p className="font-body-md text-on-surface m-0 whitespace-pre-wrap bg-surface p-3.5 rounded-xl border border-surface-variant leading-relaxed font-medium">
                           {stripAnatomyMeta(consultation.observation)}
@@ -480,7 +493,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <h5 className="font-label-sm uppercase tracking-wider text-outline m-0 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span> Diagnóstico
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span> {t('Diagnóstico', 'Diagnosis')}
                         </h5>
                         <p className="font-body-md text-on-surface m-0 font-medium bg-surface p-3.5 rounded-xl border border-surface-variant leading-relaxed">
                           {consultation.diagnosis}
@@ -490,7 +503,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
                     
                     <div className="flex flex-col gap-1.5">
                       <h5 className="font-label-sm uppercase tracking-wider text-outline m-0 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Tratamiento
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> {t('Tratamiento', 'Treatment')}
                       </h5>
                       <p className="font-body-md text-on-surface m-0 whitespace-pre-wrap bg-surface p-3.5 rounded-xl border border-surface-variant leading-relaxed font-medium">
                         {consultation.treatment}
@@ -503,14 +516,14 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
                         onClick={(e) => { e.stopPropagation(); handleEdit(consultation); }}
                         className="h-9 px-3 text-sm"
                       >
-                        <Edit className="w-4 h-4 mr-1.5" /> Editar
+                        <Edit className="w-4 h-4 mr-1.5" /> {t('Editar', 'Edit')}
                       </Button>
                       <Button 
                         variant="ghost" 
                         onClick={(e) => handleDelete(consultation.id, e)} 
                         className="h-9 px-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700"
                       >
-                        <Trash2 className="w-4 h-4 mr-1.5" /> Eliminar
+                        <Trash2 className="w-4 h-4 mr-1.5" /> {t('Eliminar', 'Delete')}
                       </Button>
                     </div>
                   </div>

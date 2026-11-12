@@ -19,6 +19,8 @@ describe('ProtectedRoute', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
+    localStorage.setItem('axioma-vet-lang-pref', 'es');
   });
 
   it('debe mostrar cargando si isLoading es true', () => {
@@ -56,5 +58,18 @@ describe('ProtectedRoute', () => {
       </MemoryRouter>
     );
     expect(screen.getByText('Contenido Protegido')).toBeInTheDocument();
+  });
+
+  it('debe mostrar el estado de carga en inglés cuando el idioma configurado es en', () => {
+    localStorage.setItem('axioma-vet-lang-pref', 'en');
+    useAuth.mockReturnValue({ isLoading: true, user: null });
+    render(
+      <MemoryRouter>
+        <ProtectedRoute>
+          <div>Protected Content</div>
+        </ProtectedRoute>
+      </MemoryRouter>
+    );
+    expect(screen.getByText(/Signing in/i)).toBeInTheDocument();
   });
 });

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Copy, Check, Printer, UserCheck, Calendar, Pill, AlertCircle, Heart } from 'lucide-react';
 import type { Patient, Consultation, Prescription, WeightRecord } from '../../services/types';
 import { formatLocalDate, calculateAge } from '../../utils/date';
+import { useTranslation } from '../../i18n';
 
 interface TutorSummaryModalProps {
   patient: Patient;
@@ -18,6 +19,7 @@ export function TutorSummaryModal({
   weights,
   onClose
 }: TutorSummaryModalProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   // Ordenar consultas y recetas por fecha más reciente
@@ -45,43 +47,43 @@ export function TutorSummaryModal({
   // Generar texto para WhatsApp o portapapeles
   const generateClipboardText = () => {
     const lines: string[] = [];
-    lines.push(`🐾 *RESUMEN DE ATENCIÓN VETERINARIA*`);
-    lines.push(`*Paciente:* ${patient.name} (${patient.species}${patient.breed ? ` - ${patient.breed}` : ''})`);
-    lines.push(`*Tutor:* ${patient.ownerName || 'No registrado'}`);
+    lines.push(`🐾 *${t('RESUMEN DE ATENCIÓN VETERINARIA', 'VETERINARY CARE SUMMARY')}*`);
+    lines.push(`*${t('Paciente:', 'Patient:')}* ${patient.name} (${patient.species}${patient.breed ? ` - ${patient.breed}` : ''})`);
+    lines.push(`*${t('Tutor:', 'Owner:')}* ${patient.ownerName || t('No registrado', 'Not recorded')}`);
     if (latestWeight) {
-      lines.push(`*Peso registrado:* ${latestWeight.weightKg} kg (${formatLocalDate(latestWeight.date)})`);
+      lines.push(`*${t('Peso registrado:', 'Recorded weight:')}* ${latestWeight.weightKg} kg (${formatLocalDate(latestWeight.date)})`);
     }
     lines.push('');
 
     if (latestConsultation) {
-      lines.push(`📋 *Última Consulta:* ${formatLocalDate(latestConsultation.createdAt)}`);
-      lines.push(`*Diagnóstico / Motivo:* ${latestConsultation.diagnosis || 'Revisión general'}`);
+      lines.push(`📋 *${t('Última Consulta:', 'Last Consultation:')}* ${formatLocalDate(latestConsultation.createdAt)}`);
+      lines.push(`*${t('Diagnóstico / Motivo:', 'Diagnosis / Reason:')}* ${latestConsultation.diagnosis || t('Revisión general', 'General checkup')}`);
       if (latestConsultation.treatment) {
-        lines.push(`*Tratamiento indicado:* ${latestConsultation.treatment}`);
+        lines.push(`*${t('Tratamiento indicado:', 'Prescribed treatment:')}* ${latestConsultation.treatment}`);
       }
       lines.push('');
     }
 
     if (latestPrescription) {
-      lines.push(`💊 *Receta Médica:*`);
-      lines.push(`• *Medicamento:* ${latestPrescription.medication}`);
-      lines.push(`• *Dosis:* ${latestPrescription.dosage}`);
-      lines.push(`• *Frecuencia:* ${latestPrescription.frequency}`);
-      lines.push(`• *Duración:* ${latestPrescription.duration}`);
+      lines.push(`💊 *${t('Receta Médica:', 'Prescription:')}*`);
+      lines.push(`• *${t('Medicamento:', 'Medication:')}* ${latestPrescription.medication}`);
+      lines.push(`• *${t('Dosis:', 'Dosage:')}* ${latestPrescription.dosage}`);
+      lines.push(`• *${t('Frecuencia:', 'Frequency:')}* ${latestPrescription.frequency}`);
+      lines.push(`• *${t('Duración:', 'Duration:')}* ${latestPrescription.duration}`);
       lines.push('');
     }
 
     if (nextControlDate) {
-      lines.push(`📅 *Próximo Control Programado:* ${formatLocalDate(nextControlDate)}`);
+      lines.push(`📅 *${t('Próximo Control Programado:', 'Next Scheduled Follow-up:')}* ${formatLocalDate(nextControlDate)}`);
       lines.push('');
     }
 
     if (patient.behaviorObservation) {
-      lines.push(`⚠️ *Observaciones especiales:* ${patient.behaviorObservation}`);
+      lines.push(`⚠️ *${t('Observaciones especiales:', 'Special observations:')}* ${patient.behaviorObservation}`);
       lines.push('');
     }
 
-    lines.push(`_Axioma Vet · Cuidado y salud para tus pacientes_`);
+    lines.push(`_${t('Axioma Vet · Cuidado y salud para tus pacientes', 'Axioma Vet · Care and health for your patients')}_`);
     return lines.join('\n');
   };
 
@@ -108,8 +110,8 @@ export function TutorSummaryModal({
           <div className="flex items-center gap-2.5 text-primary">
             <UserCheck className="w-6 h-6" />
             <div>
-              <h3 className="font-headline-sm m-0 text-base md:text-lg">Resumen para el Tutor</h3>
-              <p className="text-xs text-on-surface-variant m-0">Información clara y formal lista para entregar al propietario</p>
+              <h3 className="font-headline-sm m-0 text-base md:text-lg">{t('Resumen para el Tutor', 'Owner Summary')}</h3>
+              <p className="text-xs text-on-surface-variant m-0">{t('Información clara y formal lista para entregar al propietario', 'Clear, formal information ready to share with the owner')}</p>
             </div>
           </div>
           <button 
@@ -129,15 +131,15 @@ export function TutorSummaryModal({
             {/* Header del Paciente */}
             <div className="flex justify-between items-start border-b border-outline-variant/40 pb-4">
               <div>
-                <span className="text-[10px] uppercase font-bold tracking-wider text-primary">Ficha Informativa</span>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-primary">{t('Ficha Informativa', 'Information Sheet')}</span>
                 <h2 className="text-2xl font-bold text-on-surface m-0">{patient.name}</h2>
                 <p className="text-xs text-on-surface-variant m-0 capitalize">
                   {patient.species} {patient.breed ? `· ${patient.breed}` : ''} {patient.birthDate ? `· ${calculateAge(patient.birthDate)}` : ''}
                 </p>
               </div>
               <div className="text-right">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-outline">Tutor Responsable</span>
-                <p className="text-sm font-semibold text-on-surface m-0">{patient.ownerName || 'Sin tutor registrado'}</p>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-outline">{t('Tutor Responsable', 'Responsible Owner')}</span>
+                <p className="text-sm font-semibold text-on-surface m-0">{patient.ownerName || t('Sin tutor registrado', 'No owner recorded')}</p>
                 {patient.ownerPhone && (
                   <p className="text-xs text-on-surface-variant m-0">{patient.ownerPhone}</p>
                 )}
@@ -147,13 +149,13 @@ export function TutorSummaryModal({
             {/* Evolución de Peso */}
             {latestWeight && (
               <div className="flex items-center justify-between bg-surface-container-low/60 px-4 py-2.5 rounded-xl">
-                <span className="text-xs font-medium text-on-surface-variant">Peso actual registrado:</span>
+                <span className="text-xs font-medium text-on-surface-variant">{t('Peso actual registrado:', 'Current recorded weight:')}</span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-base font-bold text-on-surface">{latestWeight.weightKg} kg</span>
                   <span className="text-[11px] text-outline">({formatLocalDate(latestWeight.date)})</span>
                   {previousWeight && (
                     <span className="text-[11px] text-on-surface-variant">
-                      · Anterior: {previousWeight.weightKg} kg
+                      · {t('Anterior:', 'Previous:')} {previousWeight.weightKg} kg
                     </span>
                   )}
                 </div>
@@ -165,16 +167,16 @@ export function TutorSummaryModal({
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant">
                   <Heart className="w-3.5 h-3.5 text-primary" />
-                  <span>Última Atención Médica ({formatLocalDate(latestConsultation.createdAt)})</span>
+                  <span>{t('Última Atención Médica', 'Latest Medical Visit')} ({formatLocalDate(latestConsultation.createdAt)})</span>
                 </div>
                 <div className="bg-surface-container-low/30 border border-outline-variant/30 rounded-xl p-3.5">
-                  <p className="text-xs text-outline font-semibold mb-1 uppercase tracking-wider">Diagnóstico / Evaluación</p>
+                  <p className="text-xs text-outline font-semibold mb-1 uppercase tracking-wider">{t('Diagnóstico / Evaluación', 'Diagnosis / Evaluation')}</p>
                   <p className="text-sm text-on-surface font-medium m-0 leading-relaxed">
-                    {latestConsultation.diagnosis || 'Revisión preventiva'}
+                    {latestConsultation.diagnosis || t('Revisión preventiva', 'Preventive checkup')}
                   </p>
                   {latestConsultation.treatment && (
                     <div className="mt-2.5 pt-2 border-t border-outline-variant/30">
-                      <p className="text-xs text-outline font-semibold mb-1 uppercase tracking-wider">Tratamiento e Indicaciones</p>
+                      <p className="text-xs text-outline font-semibold mb-1 uppercase tracking-wider">{t('Tratamiento e Indicaciones', 'Treatment & Instructions')}</p>
                       <p className="text-xs text-on-surface leading-relaxed m-0 whitespace-pre-line">
                         {latestConsultation.treatment}
                       </p>
@@ -184,7 +186,7 @@ export function TutorSummaryModal({
               </div>
             ) : (
               <p className="text-xs text-outline italic text-center py-2">
-                No hay consultas registradas para este paciente.
+                {t('No hay consultas registradas para este paciente.', 'No consultations recorded for this patient.')}
               </p>
             )}
 
@@ -193,7 +195,7 @@ export function TutorSummaryModal({
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant">
                   <Pill className="w-3.5 h-3.5 text-primary" />
-                  <span>Prescripción Farmacológica</span>
+                  <span>{t('Prescripción Farmacológica', 'Pharmacological Prescription')}</span>
                 </div>
                 <div className="bg-primary/5 border border-primary/20 rounded-xl p-3.5 flex flex-col gap-1.5">
                   <div className="flex justify-between items-center">
@@ -201,7 +203,7 @@ export function TutorSummaryModal({
                     <span className="text-[11px] text-outline">{latestPrescription.duration}</span>
                   </div>
                   <p className="text-xs text-on-surface m-0">
-                    <strong>Dosis:</strong> {latestPrescription.dosage} · <strong>Frecuencia:</strong> {latestPrescription.frequency}
+                    <strong>{t('Dosis:', 'Dosage:')}</strong> {latestPrescription.dosage} · <strong>{t('Frecuencia:', 'Frequency:')}</strong> {latestPrescription.frequency}
                   </p>
                 </div>
               </div>
@@ -213,12 +215,12 @@ export function TutorSummaryModal({
                 <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200">
                   <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider m-0">Próximo Control Programado</p>
+                    <p className="text-xs font-bold uppercase tracking-wider m-0">{t('Próximo Control Programado', 'Next Scheduled Follow-up')}</p>
                     <p className="text-sm font-semibold m-0">{formatLocalDate(nextControlDate)}</p>
                   </div>
                 </div>
                 <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-200/80 text-emerald-900 dark:bg-emerald-800 dark:text-emerald-100">
-                  Confirmado
+                  {t('Confirmado', 'Confirmed')}
                 </span>
               </div>
             )}
@@ -228,7 +230,7 @@ export function TutorSummaryModal({
               <div className="bg-surface-container-high/40 rounded-xl p-3 flex items-start gap-2 text-xs text-on-surface-variant">
                 <AlertCircle className="w-4 h-4 text-outline shrink-0 mt-0.5" />
                 <div>
-                  <strong className="text-on-surface">Observación del paciente:</strong> {patient.behaviorObservation}
+                  <strong className="text-on-surface">{t('Observación del paciente:', 'Patient observation:')}</strong> {patient.behaviorObservation}
                 </div>
               </div>
             )}
@@ -240,7 +242,7 @@ export function TutorSummaryModal({
         {/* ACCIONES INFERIORES */}
         <div className="p-4 border-t border-surface-container-high bg-surface flex flex-col sm:flex-row justify-between items-center gap-3 print:hidden">
           <span className="text-[11px] text-outline">
-            Listo para copiar y enviar al tutor por mensaje o imprimir
+            {t('Listo para copiar y enviar al tutor por mensaje o imprimir', 'Ready to copy and send to the owner by message or print')}
           </span>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
@@ -249,7 +251,7 @@ export function TutorSummaryModal({
               className="flex-1 sm:flex-initial px-4 py-2 rounded-xl border border-outline-variant text-on-surface hover:bg-surface-container transition-colors flex items-center justify-center gap-2 text-xs font-medium"
             >
               <Printer className="w-4 h-4" />
-              Imprimir
+              {t('Imprimir', 'Print')}
             </button>
             <button
               type="button"
@@ -261,7 +263,7 @@ export function TutorSummaryModal({
               }`}
             >
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              {copied ? '¡Copiado!' : 'Copiar Resumen'}
+              {copied ? t('¡Copiado!', 'Copied!') : t('Copiar Resumen', 'Copy Summary')}
             </button>
           </div>
         </div>

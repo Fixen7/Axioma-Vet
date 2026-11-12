@@ -22,9 +22,10 @@ import {
   ANATOMY_UPDATE_EVENT,
   type CustomAnatomicalPoint, 
   type PointSeverity,
-  QUADRANT_LABELS 
+  getQuadrantLabels 
 } from '../../utils/customAnatomyPoints';
 import { formatLocalDate } from '../../utils/date';
+import { useTranslation } from '../../i18n';
 
 interface AnatomicalBodyMapProps {
   patient: Patient;
@@ -37,6 +38,8 @@ export function AnatomicalBodyMap({
   consultations: initialConsultations,
   surgeries: initialSurgeries 
 }: AnatomicalBodyMapProps) {
+  const { lang, t } = useTranslation();
+  const quadrantLabels = getQuadrantLabels(lang);
   const { getConsultations, getSurgeries } = useVetContext();
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -209,19 +212,19 @@ export function AnatomicalBodyMap({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-base md:text-lg text-[#131b2e] m-0 font-black">
-                Esquema Anatómico del Paciente
+                {t('Esquema Anatómico del Paciente', 'Patient Anatomical Map')}
               </h3>
               <span className="text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full bg-slate-100 text-[#131b2e] border-2 border-slate-300 tracking-wider">
-                Informativo
+                {t('Informativo', 'Informational')}
               </span>
               {points.length > 0 && (
                 <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-primary text-white shadow-xs">
-                  {points.length} {points.length === 1 ? 'punto registrado' : 'puntos acumulados'} ({uniqueQuadrantsCount} {uniqueQuadrantsCount === 1 ? 'cuadrante' : 'cuadrantes'})
+                  {points.length} {points.length === 1 ? t('punto registrado', 'recorded point') : t('puntos acumulados', 'accumulated points')} ({uniqueQuadrantsCount} {uniqueQuadrantsCount === 1 ? t('cuadrante', 'quadrant') : t('cuadrantes', 'quadrants')})
                 </span>
               )}
             </div>
             <p className="text-xs text-[#4a4455] m-0 mt-0.5 font-bold">
-              Suma acumulada de cuadrantes y zonas documentadas en consultas o cirugías
+              {t('Suma acumulada de cuadrantes y zonas documentadas en consultas o cirugías', 'Cumulative summary of quadrants and zones documented in consultations or surgeries')}
             </p>
           </div>
         </div>
@@ -241,7 +244,7 @@ export function AnatomicalBodyMap({
                   : 'text-[#131b2e] hover:text-black'
               }`}
             >
-              <Dog className="w-3.5 h-3.5" /> Canino
+              <Dog className="w-3.5 h-3.5" /> {t('Canino', 'Canine')}
             </button>
             <button
               type="button"
@@ -252,14 +255,14 @@ export function AnatomicalBodyMap({
                   : 'text-[#131b2e] hover:text-black'
               }`}
             >
-              <Cat className="w-3.5 h-3.5" /> Felino
+              <Cat className="w-3.5 h-3.5" /> {t('Felino', 'Feline')}
             </button>
           </div>
 
           <button 
             type="button"
             className="text-[#131b2e] hover:text-black p-1.5 rounded-xl hover:bg-slate-100 transition-colors"
-            aria-label={isExpanded ? 'Colapsar mapa' : 'Expandir mapa'}
+            aria-label={isExpanded ? t('Colapsar mapa', 'Collapse map') : t('Expandir mapa', 'Expand map')}
           >
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
@@ -275,7 +278,7 @@ export function AnatomicalBodyMap({
             <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-black uppercase tracking-wider text-[#131b2e] mr-1">
-                  Ver:
+                  {t('Ver:', 'View:')}
                 </span>
                 <button
                   type="button"
@@ -286,7 +289,7 @@ export function AnatomicalBodyMap({
                       : 'bg-white text-[#131b2e] hover:bg-slate-100 border-2 border-slate-300'
                   }`}
                 >
-                  Todos ({points.length})
+                  {t('Todos', 'All')} ({points.length})
                 </button>
                 {consultationPointsCount > 0 && (
                   <button
@@ -298,7 +301,7 @@ export function AnatomicalBodyMap({
                         : 'bg-white text-[#131b2e] hover:bg-slate-100 border-2 border-slate-300'
                     }`}
                   >
-                    <Stethoscope className="w-3.5 h-3.5" /> De Consultas ({consultationPointsCount})
+                    <Stethoscope className="w-3.5 h-3.5" /> {t('De Consultas', 'From Consultations')} ({consultationPointsCount})
                   </button>
                 )}
                 {surgeryPointsCount > 0 && (
@@ -311,7 +314,7 @@ export function AnatomicalBodyMap({
                         : 'bg-white text-[#131b2e] hover:bg-slate-100 border-2 border-slate-300'
                     }`}
                   >
-                    <Scissors className="w-3.5 h-3.5" /> De Cirugías ({surgeryPointsCount})
+                    <Scissors className="w-3.5 h-3.5" /> {t('De Cirugías', 'From Surgeries')} ({surgeryPointsCount})
                   </button>
                 )}
               </div>
@@ -321,17 +324,17 @@ export function AnatomicalBodyMap({
                 {activeProblemsCount > 0 && (
                   <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-[#dc2626] text-white shadow-xs flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
-                    {activeProblemsCount} {activeProblemsCount === 1 ? 'dolencia activa' : 'dolencias activas'}
+                    {activeProblemsCount} {activeProblemsCount === 1 ? t('dolencia activa', 'active condition') : t('dolencias activas', 'active conditions')}
                   </span>
                 )}
                 {observationsCount > 0 && (
                   <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-[#4f46e5] text-white shadow-xs">
-                    {observationsCount} obs.
+                    {observationsCount} {t('obs.', 'obs.')}
                   </span>
                 )}
                 {resolvedCount > 0 && (
                   <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-[#059669] text-white shadow-xs">
-                    {resolvedCount} resueltas
+                    {resolvedCount} {t('resueltas', 'resolved')}
                   </span>
                 )}
               </div>
@@ -345,7 +348,7 @@ export function AnatomicalBodyMap({
               <div className="relative w-full aspect-[16/10] bg-white rounded-2xl p-1.5 border-2 border-slate-300 shadow-xs overflow-hidden select-none">
                 <img 
                   src={currentImage} 
-                  alt={`Silueta zoomorfa ${activeSpeciesView}`} 
+                  alt={t(`Silueta zoomorfa ${activeSpeciesView}`, `Anatomical silhouette (${activeSpeciesView})`)} 
                   className="w-full h-full object-contain pointer-events-none select-none transition-opacity duration-300"
                 />
 
@@ -364,7 +367,7 @@ export function AnatomicalBodyMap({
                       className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-200 ${
                         isSelected ? 'scale-130 z-30 ring-3 ring-primary ring-offset-2' : 'hover:scale-115 z-20'
                       }`}
-                      title={`${p.label} - ${QUADRANT_LABELS[p.quadrant]} (${isSurgery ? 'Cirugía' : 'Consulta'})`}
+                      title={`${p.label} - ${quadrantLabels[p.quadrant]} (${isSurgery ? t('Cirugía', 'Surgery') : t('Consulta', 'Consultation')})`}
                     >
                       {p.type === 'problem' && (
                         <span className={`absolute -inset-1 rounded-full animate-ping ${colors.ping}`} />
@@ -379,8 +382,8 @@ export function AnatomicalBodyMap({
               </div>
 
               <div className="flex items-center justify-between w-full px-2 pt-2.5 text-xs text-[#131b2e] font-bold">
-                <span>Haz clic en un punto para inspeccionar</span>
-                <span className="text-[#4a4455] font-black uppercase text-[11px]">{activeSpeciesView}</span>
+                <span>{t('Haz clic en un punto para inspeccionar', 'Click a point to inspect')}</span>
+                <span className="text-[#4a4455] font-black uppercase text-[11px]">{activeSpeciesView === 'feline' ? t('Felino', 'Feline') : t('Canino', 'Canine')}</span>
               </div>
             </div>
 
@@ -394,13 +397,13 @@ export function AnatomicalBodyMap({
                       {/* Cuadrante anatómico */}
                       <div className="flex items-center gap-1.5 text-primary text-xs font-black uppercase tracking-wider mb-1">
                         <MapPin className="w-4 h-4 shrink-0" />
-                        <span>{QUADRANT_LABELS[selectedPoint.quadrant]}</span>
+                        <span>{quadrantLabels[selectedPoint.quadrant]}</span>
                       </div>
                       <h4 className="text-base font-black text-[#131b2e] m-0">{selectedPoint.label}</h4>
                     </div>
 
                     <span className={`text-[11px] uppercase font-black tracking-wider px-2.5 py-1 rounded-lg shrink-0 ${getPinColor(selectedPoint.type).badge}`}>
-                      {selectedPoint.type === 'problem' ? 'Dolencia Activa' : selectedPoint.type === 'observation' ? 'Observación' : 'Resuelto'}
+                      {selectedPoint.type === 'problem' ? t('Dolencia Activa', 'Active Condition') : selectedPoint.type === 'observation' ? t('Observación', 'Observation') : t('Resuelto', 'Resolved')}
                     </span>
                   </div>
 
@@ -413,7 +416,7 @@ export function AnatomicalBodyMap({
                         ) : (
                           <Stethoscope className="w-4 h-4 text-blue-600 shrink-0" />
                         )}
-                        {selectedPoint.sourceTitle || (selectedPoint.sourceType === 'surgery' ? 'Registro de Cirugía' : 'Registro de Historia Clínica')}
+                        {selectedPoint.sourceTitle || (selectedPoint.sourceType === 'surgery' ? t('Registro de Cirugía', 'Surgery Record') : t('Registro de Historia Clínica', 'Clinical History Record'))}
                       </span>
                       <span className="flex items-center gap-1 font-black text-[#131b2e]">
                         <Calendar className="w-3.5 h-3.5" />
@@ -430,14 +433,14 @@ export function AnatomicalBodyMap({
 
                   <div className="flex justify-between items-center pt-1 border-t border-slate-200">
                     <span className="text-xs text-[#4a4455] font-black">
-                      Punto acumulado #{visiblePoints.findIndex(p => p.id === selectedPoint.id) + 1}
+                      {t('Punto acumulado #', 'Accumulated point #')}{visiblePoints.findIndex(p => p.id === selectedPoint.id) + 1}
                     </span>
                     <button
                       type="button"
                       onClick={() => setSelectedPointId(null)}
                       className="text-xs text-primary hover:underline font-black cursor-pointer"
                     >
-                      Ver lista completa &rarr;
+                      {t('Ver lista completa', 'View full list')} &rarr;
                     </button>
                   </div>
                 </div>
@@ -448,10 +451,10 @@ export function AnatomicalBodyMap({
                     <MapPin className="w-6 h-6" />
                   </div>
                   <h4 className="font-black text-sm text-[#131b2e] m-0 leading-snug">
-                    Aún no hay puntos anatómicos registrados en la historia clínica o cirugías
+                    {t('Aún no hay puntos anatómicos registrados en la historia clínica o cirugías', 'No anatomical points recorded in clinical history or surgeries yet')}
                   </h4>
                   <p className="text-xs text-[#4a4455] m-0 max-w-sm leading-relaxed font-bold">
-                    Al registrar una consulta o cirugía, marca las zonas y cuadrantes correspondientes para llevar un mejor seguimiento visual de la evolución del paciente.
+                    {t('Al registrar una consulta o cirugía, marca las zonas y cuadrantes correspondientes para llevar un mejor seguimiento visual de la evolución del paciente.', 'When recording a consultation or surgery, mark the corresponding zones and quadrants to keep better visual track of the patient\'s progress.')}
                   </p>
                 </div>
               ) : (
@@ -459,10 +462,10 @@ export function AnatomicalBodyMap({
                 <div className="flex flex-col gap-2">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1.5">
                     <span className="text-xs font-black uppercase tracking-wider text-[#131b2e]">
-                      Cuadrantes con Registros ({visiblePoints.length})
+                      {t('Cuadrantes con Registros', 'Recorded Quadrants')} ({visiblePoints.length})
                     </span>
                     <span className="text-[11px] text-[#4a4455] font-bold">
-                      Haz clic en un punto para inspeccionar
+                      {t('Haz clic en un punto para inspeccionar', 'Click a point to inspect')}
                     </span>
                   </div>
 
@@ -491,7 +494,7 @@ export function AnatomicalBodyMap({
                                 <span className="truncate">{p.label}</span>
                               </p>
                               <p className="text-[11px] text-primary font-black m-0 truncate mt-0.5">
-                                {QUADRANT_LABELS[p.quadrant]}
+                                {quadrantLabels[p.quadrant]}
                               </p>
                             </div>
                           </div>

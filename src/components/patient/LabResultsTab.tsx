@@ -4,8 +4,10 @@ import { Button } from '../ui/Button';
 import { useVetContext } from '../../context/VetContext';
 import type { LabResult } from '../../services/types';
 import { getLocalDatetimeString, formatLocalDate, toUTCDateTime } from '../../utils/date';
+import { useTranslation } from '../../i18n';
 
 export function LabResultsTab({ patientId, isDeceased }: { patientId: string, isDeceased: boolean }) {
+  const { t } = useTranslation();
   const { getLabs, saveLab, deleteLab, settings } = useVetContext();
   const [labs, setLabs] = useState<LabResult[]>([]);
   const [isAdding, setIsAdding] = useState(false);
@@ -41,7 +43,7 @@ export function LabResultsTab({ patientId, isDeceased }: { patientId: string, is
     const finalExamType = formData.examTypeSelect === 'Otro' ? formData.customExamType : formData.examTypeSelect;
 
     if (!finalExamType || !formData.date || !formData.result || !formData.veterinarian) {
-      alert('Por favor completa el tipo de examen, la fecha, los resultados y el nombre del veterinario.');
+      alert(t('Por favor completa el tipo de examen, la fecha, los resultados y el nombre del veterinario.', 'Please complete the exam type, date, results, and veterinarian name.'));
       return;
     }
 
@@ -98,12 +100,12 @@ export function LabResultsTab({ patientId, isDeceased }: { patientId: string, is
 
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("¿Seguro que quieres eliminar este resultado de laboratorio? Esta acción no se puede deshacer.")) {
+    if (window.confirm(t('¿Seguro que quieres eliminar este resultado de laboratorio? Esta acción no se puede deshacer.', 'Are you sure you want to delete this lab result? This action cannot be undone.'))) {
       try {
         await deleteLab(id);
         loadLabs();
       } catch (error: any) {
-        alert("Error al eliminar: " + error.message);
+        alert(t('Error al eliminar: ', 'Error deleting: ') + error.message);
       }
     }
   };
@@ -116,47 +118,58 @@ export function LabResultsTab({ patientId, isDeceased }: { patientId: string, is
     'Otro'
   ];
 
-  if (isLoading) return <div className="py-8 text-outline">Cargando resultados...</div>;
+  const translateExamType = (type: string) => {
+    const map: Record<string, string> = {
+      Hemograma: t('Hemograma', 'CBC (Complete Blood Count)'),
+      'Química sanguínea': t('Química sanguínea', 'Blood Chemistry'),
+      Coproparasitario: t('Coproparasitario', 'Fecal Exam'),
+      'Urianálisis': t('Urianálisis', 'Urinalysis'),
+      Otro: t('Otro', 'Other'),
+    };
+    return map[type] || type;
+  };
+
+  if (isLoading) return <div className="py-8 text-outline">{t('Cargando resultados...', 'Loading results...')}</div>;
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex justify-between items-center">
-        <h3 className="font-headline-lg m-0">Resultados de Laboratorio</h3>
+        <h3 className="font-headline-lg m-0">{t('Resultados de Laboratorio', 'Lab Results')}</h3>
         {!isDeceased && !isAdding && (
           <Button variant="primary" onClick={() => { setEditId(null); setIsAdding(true); }}>
-            <PlusCircle className="w-5 h-5" /> Nuevo Resultado
+            <PlusCircle className="w-5 h-5" /> {t('Nuevo Resultado', 'New Result')}
           </Button>
         )}
       </div>
 
       {isAdding && (
         <div className="bg-surface-container-lowest border border-primary-container p-6 rounded-2xl flex flex-col gap-6 shadow-sm">
-          <h4 className="font-headline-md m-0 text-primary">{editId ? 'Editar Resultado' : 'Registrar Examen de Laboratorio'}</h4>
+          <h4 className="font-headline-md m-0 text-primary">{editId ? t('Editar Resultado', 'Edit Result') : t('Registrar Examen de Laboratorio', 'Record Lab Exam')}</h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
-              <label className="font-label-md text-on-surface-variant">Tipo de Examen *</label>
+              <label className="font-label-md text-on-surface-variant">{t('Tipo de Examen *', 'Exam Type *')}</label>
               <select 
                 name="examTypeSelect" 
                 value={formData.examTypeSelect} 
                 onChange={handleChange}
                 className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none"
               >
-                <option value="" disabled>Selecciona un examen...</option>
-                {examTypes.map(e => <option key={e} value={e}>{e}</option>)}
+                <option value="" disabled>{t('Selecciona un examen...', 'Select an exam...')}</option>
+                {examTypes.map(e => <option key={e} value={e}>{translateExamType(e)}</option>)}
               </select>
             </div>
             
             {formData.examTypeSelect === 'Otro' && (
               <div className="flex flex-col gap-2 md:col-start-2">
-                <label className="font-label-md text-on-surface-variant">Especificar Examen *</label>
+                <label className="font-label-md text-on-surface-variant">{t('Especificar Examen *', 'Specify Exam *')}</label>
                 <input 
                   type="text" 
                   name="customExamType" 
                   value={formData.customExamType} 
                   onChange={handleChange}
                   className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none"
-                  placeholder="Nombre del examen"
+                  placeholder={t('Nombre del examen', 'Exam name')}
                 />
               </div>
             )}
@@ -164,7 +177,7 @@ export function LabResultsTab({ patientId, isDeceased }: { patientId: string, is
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
-              <label className="font-label-md text-on-surface-variant">Fecha del Resultado *</label>
+              <label className="font-label-md text-on-surface-variant">{t('Fecha del Resultado *', 'Result Date *')}</label>
               <input 
                 type="datetime-local" 
                 name="date" 
@@ -175,45 +188,45 @@ export function LabResultsTab({ patientId, isDeceased }: { patientId: string, is
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="font-label-md text-on-surface-variant">Veterinario Responsable *</label>
+              <label className="font-label-md text-on-surface-variant">{t('Veterinario Responsable *', 'Responsible Veterinarian *')}</label>
               <input 
                 type="text" 
                 name="veterinarian" 
                 value={formData.veterinarian} 
                 onChange={handleChange}
                 className="w-full h-12 px-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none"
-                placeholder="Dr(a). Nombre"
+                placeholder={t('Dr(a). Nombre', 'Dr. Name')}
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="font-label-md text-on-surface-variant">Resultados *</label>
+            <label className="font-label-md text-on-surface-variant">{t('Resultados *', 'Results *')}</label>
             <textarea 
               name="result" 
               value={formData.result} 
               onChange={handleChange}
               rows={3}
               className="w-full p-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none resize-none"
-              placeholder="Valores, hallazgos principales..."
+              placeholder={t('Valores, hallazgos principales...', 'Values, key findings...')}
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="font-label-md text-on-surface-variant">Interpretación / Observaciones (Opcional)</label>
+            <label className="font-label-md text-on-surface-variant">{t('Interpretación / Observaciones (Opcional)', 'Interpretation / Notes (Optional)')}</label>
             <textarea 
               name="interpretation" 
               value={formData.interpretation} 
               onChange={handleChange}
               rows={2}
               className="w-full p-4 rounded-xl bg-surface-container-low border border-outline-variant focus:border-primary outline-none resize-none"
-              placeholder="Conclusiones clínicas del examen..."
+              placeholder={t('Conclusiones clínicas del examen...', 'Clinical conclusions of the exam...')}
             />
           </div>
 
           <div className="flex justify-end gap-4 mt-2">
-            <Button variant="ghost" onClick={handleCancel}>Cancelar</Button>
-            <Button variant="primary" onClick={handleSubmit}>{editId ? 'Actualizar Resultado' : 'Guardar Resultado'}</Button>
+            <Button variant="ghost" onClick={handleCancel}>{t('Cancelar', 'Cancel')}</Button>
+            <Button variant="primary" onClick={handleSubmit}>{editId ? t('Actualizar Resultado', 'Update Result') : t('Guardar Resultado', 'Save Result')}</Button>
           </div>
         </div>
       )}
@@ -221,7 +234,7 @@ export function LabResultsTab({ patientId, isDeceased }: { patientId: string, is
       {labs.length === 0 && !isAdding ? (
         <div className="py-12 flex flex-col items-center justify-center text-outline bg-surface-container-lowest rounded-2xl border border-dashed border-outline-variant">
           <TestTube className="w-12 h-12 mb-4 opacity-50" />
-          <p className="font-body-lg m-0">No hay exámenes de laboratorio registrados.</p>
+          <p className="font-body-lg m-0">{t('No hay exámenes de laboratorio registrados.', 'No lab exams recorded.')}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -230,12 +243,12 @@ export function LabResultsTab({ patientId, isDeceased }: { patientId: string, is
               <div className="flex justify-between items-start border-b border-surface-variant pb-4 mb-4">
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-label-caps tracking-widest text-primary uppercase">{lab.examType}</span>
+                    <span className="font-label-caps tracking-widest text-primary uppercase">{translateExamType(lab.examType)}</span>
                     <div className="flex items-center gap-1">
-                      <button onClick={() => handleEdit(lab)} className="text-on-surface-variant hover:text-primary p-1 rounded-full hover:bg-primary-container/20 transition-colors" title="Editar registro">
+                      <button onClick={() => handleEdit(lab)} className="text-on-surface-variant hover:text-primary p-1 rounded-full hover:bg-primary-container/20 transition-colors" title={t('Editar registro', 'Edit record')}>
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(lab.id)} className="text-red-400 hover:text-red-600 p-1 rounded-full hover:bg-red-50 transition-colors" title="Eliminar registro">
+                      <button onClick={() => handleDelete(lab.id)} className="text-red-400 hover:text-red-600 p-1 rounded-full hover:bg-red-50 transition-colors" title={t('Eliminar registro', 'Delete record')}>
                         <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
@@ -252,12 +265,12 @@ export function LabResultsTab({ patientId, isDeceased }: { patientId: string, is
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                 <div className="flex flex-col gap-1">
-                  <h5 className="font-label-md text-on-surface-variant m-0 uppercase">Resultados</h5>
+                  <h5 className="font-label-md text-on-surface-variant m-0 uppercase">{t('Resultados', 'Results')}</h5>
                   <p className="font-body-md text-on-surface m-0 whitespace-pre-wrap">{lab.result}</p>
                 </div>
                 {lab.interpretation && (
                   <div className="flex flex-col gap-1">
-                    <h5 className="font-label-md text-on-surface-variant m-0 uppercase">Interpretación</h5>
+                    <h5 className="font-label-md text-on-surface-variant m-0 uppercase">{t('Interpretación', 'Interpretation')}</h5>
                     <p className="font-body-md text-on-surface m-0 font-medium">{lab.interpretation}</p>
                   </div>
                 )}

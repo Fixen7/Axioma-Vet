@@ -1,4 +1,5 @@
 import type { Consultation, Prescription, WeightRecord, Patient } from '../services/types';
+import { pickLang } from '../i18n';
 
 export interface WeightDeltaResult {
   hasValidDelta: boolean;
@@ -190,7 +191,7 @@ export function buildClinicalMemory(
   if (patient.behaviorObservation && patient.behaviorObservation.trim() !== '') {
     importantObservations.push({
       text: patient.behaviorObservation.trim(),
-      source: 'Observación registrada en perfil'
+      source: pickLang('Observación registrada en perfil', 'Observation recorded in profile')
     });
   }
 

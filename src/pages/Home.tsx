@@ -2,11 +2,13 @@ import { Plus, Search, CalendarDays, LogOut, HeartPulse } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useVetContext } from '../context/VetContext';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../i18n';
 
 export default function Home() {
   const navigate = useNavigate();
   const { settings } = useVetContext();
   const { signOut } = useAuth();
+  const { t } = useTranslation();
 
   const handleSignOut = async () => {
     try {
@@ -32,10 +34,11 @@ export default function Home() {
           }} 
           className="p-3 rounded-full bg-surface-container-lowest/50 hover:bg-surface-container shadow-sm hover:shadow text-on-surface-variant hover:text-primary transition-all duration-300 backdrop-blur-md cursor-pointer"
         >
-          <span className="text-xs font-semibold px-2">Ajustes</span>
+          <span className="text-xs font-semibold px-2">{t('Ajustes', 'Settings')}</span>
         </button>
         <button 
           onClick={handleSignOut} 
+          title={t('Cerrar sesión', 'Sign out')}
           className="p-3 rounded-full bg-surface-container-lowest/50 hover:bg-red-500/10 shadow-sm hover:shadow text-on-surface-variant hover:text-red-500 transition-all duration-300 backdrop-blur-md cursor-pointer"
         >
           <LogOut className="w-5 h-5 md:w-6 md:h-6" />
@@ -50,17 +53,19 @@ export default function Home() {
             <HeartPulse className="w-4 h-4" /> Axioma Vet
           </div>
           <h1 className="font-display text-4xl md:text-display text-on-background tracking-tighter cursor-default">
-            {settings?.doctorName ? `Hola, ${settings.doctorName}` : 'Bienvenido'}
+            {settings?.doctorName ? t(`Hola, ${settings.doctorName}`, `Hello, ${settings.doctorName}`) : t('Bienvenido', 'Welcome')}
           </h1>
           <p className="font-body-lg text-on-surface-variant max-w-md mx-auto">
-            {settings?.clinicName ? `Panel principal de ${settings.clinicName}. ¿Qué haremos hoy?` : 'Tu sistema de gestión clínica veterinaria inteligente.'}
+            {settings?.clinicName
+              ? t(`Panel principal de ${settings.clinicName}. ¿Qué haremos hoy?`, `Main dashboard for ${settings.clinicName}. What shall we do today?`)
+              : t('Tu sistema de gestión clínica veterinaria inteligente.', 'Your smart veterinary clinical management system.')}
           </p>
         </header>
 
         {/* Bento Grid Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
           
-          {/* Primary Card: Nuevo Paciente (Spans 2 columns on desktop) */}
+          {/* Primary Card: Nuevo Paciente */}
           <button
             onClick={() => navigate('/patient/new')}
             className="md:col-span-2 group relative overflow-hidden rounded-[32px] bg-gradient-to-br from-primary to-primary-container p-8 md:p-12 text-left shadow-[0_8px_30px_-10px_rgba(109,40,217,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(109,40,217,0.6)] transition-all duration-500 hover:-translate-y-1 outline-none focus-visible:ring-4 ring-primary-container cursor-pointer"
@@ -73,9 +78,14 @@ export default function Home() {
                 <Plus className="w-8 h-8 text-white" />
               </div>
               <div className="mt-4 md:mt-8">
-                <h2 className="font-display text-3xl md:text-4xl text-white tracking-tight mb-2">Nuevo Paciente</h2>
+                <h2 className="font-display text-3xl md:text-4xl text-white tracking-tight mb-2">
+                  {t('Nuevo Paciente', 'New Patient')}
+                </h2>
                 <p className="font-body-md text-white/80 max-w-sm">
-                  Registra un nuevo integrante en la clínica y comienza a llevar su historial clínico.
+                  {t(
+                    'Registra un nuevo integrante en la clínica y comienza a llevar su historial clínico.',
+                    'Register a new patient in the clinic and start keeping their clinical record.'
+                  )}
                 </p>
               </div>
             </div>
@@ -94,9 +104,14 @@ export default function Home() {
                 <Search className="w-6 h-6" />
               </div>
               <div className="mt-4 md:mt-12">
-                <h2 className="font-headline-lg text-on-surface mb-2">Buscar Paciente</h2>
+                <h2 className="font-headline-lg text-on-surface mb-2">
+                  {t('Buscar Paciente', 'Search Patient')}
+                </h2>
                 <p className="font-body-sm text-on-surface-variant">
-                  Accede rápidamente a historiales médicos y evolución de peso.
+                  {t(
+                    'Accede rápidamente a historiales médicos y evolución de peso.',
+                    'Quickly access medical records and weight history.'
+                  )}
                 </p>
               </div>
             </div>
@@ -115,9 +130,14 @@ export default function Home() {
                 <CalendarDays className="w-6 h-6" />
               </div>
               <div className="mt-4 md:mt-12">
-                <h2 className="font-headline-lg text-on-surface mb-2">Próximos Eventos</h2>
+                <h2 className="font-headline-lg text-on-surface mb-2">
+                  {t('Próximos Eventos', 'Upcoming Events')}
+                </h2>
                 <p className="font-body-sm text-on-surface-variant">
-                  Revisa tu agenda y gestiona citas o cirugías agendadas.
+                  {t(
+                    'Revisa tu agenda y gestiona citas o cirugías agendadas.',
+                    'Review your schedule and manage appointments or scheduled surgeries.'
+                  )}
                 </p>
               </div>
             </div>

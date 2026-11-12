@@ -1,6 +1,7 @@
 import { ArrowLeft, Bell, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../i18n';
 
 interface TopAppBarProps {
   title: string;
@@ -11,6 +12,7 @@ interface TopAppBarProps {
 export function TopAppBar({ title, subtitle, showBack = true }: TopAppBarProps) {
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { t } = useTranslation();
 
   const handleSignOut = async () => {
     try {
@@ -47,7 +49,7 @@ export function TopAppBar({ title, subtitle, showBack = true }: TopAppBarProps) 
         </button>
         <button 
           onClick={handleSignOut}
-          title="Cerrar sesión"
+          title={t('Cerrar sesión', 'Sign out')}
           className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-red-50 hover:text-red-500 transition-colors active:scale-95 text-on-surface-variant"
         >
           <LogOut className="w-5 h-5" />

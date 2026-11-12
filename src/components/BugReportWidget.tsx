@@ -3,8 +3,10 @@ import { Bug, X, Send, Loader2, BellRing } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
 import { telemetry } from '../services/telemetry';
+import { useTranslation } from '../i18n';
 
 export function BugReportWidget() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'report' | 'telemetry'>('report');
   const [titulo, setTitulo] = useState('');
@@ -12,7 +14,6 @@ export function BugReportWidget() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Estado para prueba de Telegram
   const [botToken, setBotToken] = useState(localStorage.getItem('axioma_telemetry_telegram_token') || '');
   const [chatId, setChatId] = useState(localStorage.getItem('axioma_telemetry_telegram_chat_id') || '');
   const [testStatus, setTestStatus] = useState<string | null>(null);
@@ -20,7 +21,6 @@ export function BugReportWidget() {
   
   const { user } = useAuth();
 
-  // El widget de depuración/reporte solo debe estar visible en Staging/Development para pruebas móviles, nunca en Producción
   const isProduction = import.meta.env.VITE_AXIOMA_ENV === 'production';
   if (isProduction || !user) return null;
 
@@ -30,14 +30,12 @@ export function BugReportWidget() {
 
     setIsSubmitting(true);
     try {
-      // 1. Despacho inmediato a Telemetría centralizada & Telegram
       telemetry.reportUserBug(titulo, descripcion, {
         userId: user.id,
         userEmail: user.email,
         url: window.location.href
       });
 
-      // 2. Registro en base de datos
       const { error } = await supabase.schema('public').from('bug_reports').insert([
         {
           user_id: user.id,
@@ -61,7 +59,6 @@ export function BugReportWidget() {
       }, 2000);
     } catch (err) {
       console.error('Error reporting bug:', err);
-      // Incluso si falla la BD, la alerta de telemetría ya se intentó enviar
       setSuccess(true);
       setTimeout(() => {
         setIsOpen(false);
@@ -79,7 +76,7 @@ export function BugReportWidget() {
       telemetry.configureTelegram({ botToken, chatId });
       const res = await telemetry.testTelegramConnection(botToken, chatId);
       if (res.success) {
-        setTestStatus('✅ ¡Alerta enviada a tu Telegram con éxito!');
+        setTestStatus(t('✅ ¡Alerta enviada a tu Telegram con éxito!', '✅ Alert sent to your Telegram successfully!'));
       } else {
         setTestStatus(`❌ ${res.message}`);
       }
@@ -104,7 +101,7 @@ export function BugReportWidget() {
                 }`}
               >
                 <Bug size={14} />
-                Reportar Bug
+                {t('Reportar Bug', 'Report Bug')}
               </button>
               <button
                 type="button"
@@ -114,7 +111,7 @@ export function BugReportWidget() {
                 }`}
               >
                 <BellRing size={14} />
-                Telegram & Telemetría
+                {t('Telegram & Telemetría', 'Telegram & Telemetry')}
               </button>
             </div>
             <button 
@@ -132,21 +129,23 @@ export function BugReportWidget() {
                   <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
                     <Send size={20} className="text-green-600" />
                   </div>
-                  <p className="font-semibold">¡Reporte y Alerta Enviados!</p>
-                  <p className="text-xs text-gray-500 mt-1">Registrado en base de datos y despachado por telemetría.</p>
+                  <p className="font-semibold">{t('¡Reporte y Alerta Enviados!', 'Report & Alert Sent!')}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {t('Registrado en base de datos y despachado por telemetría.', 'Logged in database and dispatched via telemetry.')}
+                  </p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Título del problema
+                      {t('Título del problema', 'Issue title')}
                     </label>
                     <input
                       type="text"
                       required
                       value={titulo}
                       onChange={(e) => setTitulo(e.target.value)}
-                      placeholder="Ej: Error al actualizar paciente"
+                      placeholder={t('Ej: Error al actualizar paciente', 'e.g. Error updating patient')}
                       className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5925dc] bg-white text-gray-900"
                       disabled={isSubmitting}
                     />
@@ -154,13 +153,13 @@ export function BugReportWidget() {
                   
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Descripción detallada
+                      {t('Descripción detallada', 'Detailed description')}
                     </label>
                     <textarea
                       required
                       value={descripcion}
                       onChange={(e) => setDescripcion(e.target.value)}
-                      placeholder="Describe qué sucedió..."
+                      placeholder={t('Describe qué sucedió...', 'Describe what happened...')}
                       rows={3}
                       className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5925dc] resize-none bg-white text-gray-900"
                       disabled={isSubmitting}
@@ -175,12 +174,12 @@ export function BugReportWidget() {
                     {isSubmitting ? (
                       <>
                         <Loader2 size={14} className="animate-spin" />
-                        Enviando alerta...
+                        {t('Enviando alerta...', 'Sending alert...')}
                       </>
                     ) : (
                       <>
                         <Send size={14} />
-                        Enviar Reporte + Alerta
+                        {t('Enviar Reporte + Alerta', 'Send Report + Alert')}
                       </>
                     )}
                   </button>
@@ -191,7 +190,10 @@ export function BugReportWidget() {
                 <div className="bg-purple-50 p-2.5 rounded-xl border border-purple-100 flex items-start gap-2">
                   <BellRing size={16} className="text-[#5925dc] shrink-0 mt-0.5" />
                   <p className="text-[11px] text-gray-600 leading-tight">
-                    Recibe notificaciones en tu celular vía Telegram para errores críticos (BD, Auth, UI, Network) en tiempo real sin costo.
+                    {t(
+                      'Recibe notificaciones en tu celular vía Telegram para errores críticos (BD, Auth, UI, Network) en tiempo real sin costo.',
+                      'Receive real-time mobile notifications via Telegram for critical errors (DB, Auth, UI, Network) at no cost.'
+                    )}
                   </p>
                 </div>
 
@@ -212,7 +214,7 @@ export function BugReportWidget() {
                     type="text"
                     value={chatId}
                     onChange={(e) => setChatId(e.target.value)}
-                    placeholder="Ej: -100123456789 o tu ID de usuario"
+                    placeholder={t('Ej: -100123456789 o tu ID de usuario', 'e.g. -100123456789 or your user ID')}
                     className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#5925dc] text-xs font-mono bg-white text-gray-900"
                   />
                 </div>
@@ -224,7 +226,10 @@ export function BugReportWidget() {
                 )}
 
                 <div className="flex items-center justify-between pt-1 text-[11px] text-gray-500 border-t border-gray-100">
-                  <span>Eventos en sesión: <strong>{telemetry.getRecentEvents().length}</strong></span>
+                  <span>
+                    {t('Eventos en sesión:', 'Session events:')}{' '}
+                    <strong>{telemetry.getRecentEvents().length}</strong>
+                  </span>
                   <button
                     type="button"
                     onClick={handleTestTelegram}
@@ -236,7 +241,7 @@ export function BugReportWidget() {
                     ) : (
                       <Send size={12} />
                     )}
-                    Probar Alerta en Celular
+                    {t('Probar Alerta en Celular', 'Test Mobile Alert')}
                   </button>
                 </div>
               </div>
@@ -247,11 +252,11 @@ export function BugReportWidget() {
         <button
           onClick={() => setIsOpen(true)}
           className="bg-[#131b2e] hover:bg-[#202b46] text-white p-3 rounded-full shadow-xl transition-transform hover:scale-105 flex items-center justify-center group cursor-pointer border border-white/10"
-          title="Telemetría & Reporte de Bugs"
+          title={t('Telemetría & Reporte de Bugs', 'Telemetry & Bug Reporting')}
         >
           <Bug size={20} />
           <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 ease-in-out">
-            <span className="pl-2 pr-1 font-medium text-xs">Telemetría & Bugs</span>
+            <span className="pl-2 pr-1 font-medium text-xs">{t('Telemetría & Bugs', 'Telemetry & Bugs')}</span>
           </span>
         </button>
       )}
