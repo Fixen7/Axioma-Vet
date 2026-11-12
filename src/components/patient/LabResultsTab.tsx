@@ -133,7 +133,7 @@ export function LabResultsTab({ patientId, isDeceased }: { patientId: string, is
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <h3 className="font-headline-lg m-0">{t('Resultados de Laboratorio', 'Lab Results')}</h3>
         {!isDeceased && !isAdding && (
           <Button variant="primary" onClick={() => { setEditId(null); setIsAdding(true); }}>

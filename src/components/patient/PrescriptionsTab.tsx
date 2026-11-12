@@ -118,7 +118,7 @@ export function PrescriptionsTab({ patientId, isDeceased }: { patientId: string,
 
   return (
     <div className="flex flex-col gap-8 print:block">
-      <div className="flex justify-between items-center print:hidden">
+      <div className="flex flex-wrap justify-between items-center gap-3 print:hidden">
         <h3 className="font-headline-lg m-0">{t('Recetas Médicas', 'Prescriptions')}</h3>
         {!isDeceased && !isAdding && (
           <Button variant="primary" onClick={() => { setEditId(null); setIsAdding(true); }}>

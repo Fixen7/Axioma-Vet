@@ -81,7 +81,7 @@ export function GroomingTab({ patientId, isDeceased }: { patientId: string, isDe
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <h3 className="font-headline-lg m-0">{t('Historial de Peluquería', 'Grooming History')}</h3>
         {!isDeceased && !isAdding && (
           <Button variant="primary" onClick={() => setIsAdding(true)}>

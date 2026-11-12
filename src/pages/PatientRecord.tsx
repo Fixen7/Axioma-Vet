@@ -15,6 +15,7 @@ import { GroomingTab } from '../components/patient/GroomingTab';
 import { WeightHistoryModal } from '../components/patient/WeightHistoryModal';
 import { TutorSummaryModal } from '../components/patient/TutorSummaryModal';
 import { SimilarCasesModal } from '../components/patient/SimilarCasesModal';
+import { PatientSectionModal } from '../components/patient/PatientSectionModal';
 import { AnatomicalBodyMap } from '../components/patient/AnatomicalBodyMap';
 import { calculateAge } from '../utils/date';
 import { ClinicalMemoryCard } from '../components/patient/ClinicalMemoryCard';
@@ -30,7 +31,7 @@ export default function PatientRecord() {
   const navigate = useNavigate();
   const { patients, updatePatientStatus, deletePatient } = useVetContext();
   
-  const [activeTab, setActiveTab] = useState<Tab>('activity');
+  const [activeTab, setActiveTab] = useState<Tab | null>(null);
 
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
@@ -209,22 +210,76 @@ export default function PatientRecord() {
 
   const statusInfo = getStatusDisplay();
 
-  const renderTabButton = (tab: Tab, label: string, Icon: any) => (
-    <button
-      onClick={() => setActiveTab(tab)}
-      className={`flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl md:rounded-full font-black text-xs md:text-sm transition-all duration-200 relative cursor-pointer select-none ${
-        activeTab === tab
-          ? 'bg-primary text-white shadow-md shadow-primary/20 scale-[1.02]'
-          : 'bg-white text-[#131b2e] hover:bg-slate-100 hover:text-black border-2 border-slate-200 shadow-2xs'
-      } ${tab === 'grooming' ? 'col-span-2 sm:col-span-1 md:col-span-auto' : ''}`}
-    >
-      <Icon className="w-4 h-4 shrink-0" />
-      <span className="truncate">{label}</span>
-      {activeTab === tab && (
-        <span className="hidden md:block absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-white" />
-      )}
-    </button>
-  );
+  const tabMeta: Record<Tab, { label: string; subtitle: string; icon: any }> = {
+    activity: {
+      label: t('Actividad', 'Activity'),
+      subtitle: t('Línea de tiempo clínica y eventos del paciente', 'Clinical timeline and patient events'),
+      icon: Activity,
+    },
+    history: {
+      label: t('Historia Clínica', 'Clinical History'),
+      subtitle: t('Consultas, diagnósticos y puntos anatómicos', 'Consultations, diagnoses, and anatomical points'),
+      icon: FileText,
+    },
+    vaccines: {
+      label: t('Vacunas', 'Vaccines'),
+      subtitle: t('Esquema de vacunación y refuerzos', 'Vaccination schedule and boosters'),
+      icon: Syringe,
+    },
+    surgeries: {
+      label: t('Cirugías', 'Surgeries'),
+      subtitle: t('Procedimientos quirúrgicos y recuperación', 'Surgical procedures and recovery'),
+      icon: Scissors,
+    },
+    labs: {
+      label: t('Laboratorio', 'Labs'),
+      subtitle: t('Exámenes, resultados y archivos clínicos', 'Lab tests, results, and clinical files'),
+      icon: TestTube,
+    },
+    prescriptions: {
+      label: t('Recetas', 'Prescriptions'),
+      subtitle: t('Prescripciones médicas e indicaciones', 'Medical prescriptions and instructions'),
+      icon: Pill,
+    },
+    grooming: {
+      label: t('Peluquería', 'Grooming'),
+      subtitle: t('Servicios de estética e higiene registrados', 'Recorded grooming and hygiene services'),
+      icon: Scissors,
+    },
+  };
+
+  const handleCloseTabModal = () => {
+    const closingTab = activeTab;
+    setActiveTab(null);
+    if (closingTab && closingTab !== 'activity') {
+      refreshMemory();
+    }
+  };
+
+  const renderTabButton = (tab: Tab) => {
+    const { label, icon: Icon } = tabMeta[tab];
+    const isActive = activeTab === tab;
+    return (
+      <button
+        key={tab}
+        type="button"
+        onClick={() => setActiveTab((prev) => (prev === tab ? null : tab))}
+        aria-expanded={isActive}
+        aria-haspopup="dialog"
+        className={`flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl md:rounded-full font-black text-xs md:text-sm transition-all duration-200 relative cursor-pointer select-none ${
+          isActive
+            ? 'bg-primary text-white shadow-md shadow-primary/20 scale-[1.02]'
+            : 'bg-white text-[#131b2e] hover:bg-slate-100 hover:text-black border-2 border-slate-200 shadow-2xs'
+        } ${tab === 'grooming' ? 'col-span-2 md:col-span-auto' : ''}`}
+      >
+        <Icon className="w-4 h-4 shrink-0" />
+        <span className="truncate">{label}</span>
+        {isActive && (
+          <span className="hidden md:block absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-white" />
+        )}
+      </button>
+    );
+  };
 
   return (
     <div className="bg-background text-on-background min-h-screen flex flex-col antialiased relative overflow-x-hidden print:bg-white print:min-h-0">
@@ -428,18 +483,14 @@ export default function PatientRecord() {
         </section>
 
         {/* ========================================================
-            BARRA DE NAVEGACIÓN DE PESTAÑAS (ANTES DE LA PARTE INFORMATIVA):
-            - Desktop (md+): En línea recta horizontal continua
-            - Móvil (<md): Cuadrícula minimalista limpia
+            BARRA DE ACCIONES CLÍNICAS (POP-UP POR MÓDULO):
+            - Ningún módulo viene seleccionado por defecto
+            - Móvil (<md): Cuadrícula de 2 columnas
+            - Tablet (md): Botones flexibles sin desbordamiento
+            - Desktop (lg+): Fila horizontal continua
             ======================================================== */}
-        <nav className="grid grid-cols-2 sm:grid-cols-4 md:flex md:flex-row md:items-center md:flex-nowrap gap-2 py-1 print:hidden w-full">
-          {renderTabButton('activity', t('Actividad', 'Activity'), Activity)}
-          {renderTabButton('history', t('Historia Clínica', 'Clinical History'), FileText)}
-          {renderTabButton('vaccines', t('Vacunas', 'Vaccines'), Syringe)}
-          {renderTabButton('surgeries', t('Cirugías', 'Surgeries'), Scissors)}
-          {renderTabButton('labs', t('Laboratorio', 'Labs'), TestTube)}
-          {renderTabButton('prescriptions', t('Recetas', 'Prescriptions'), Pill)}
-          {renderTabButton('grooming', t('Peluquería', 'Grooming'), Scissors)}
+        <nav className="grid grid-cols-2 md:flex md:flex-wrap lg:flex-nowrap md:items-center gap-2 py-1 print:hidden w-full">
+          {(['activity', 'history', 'vaccines', 'surgeries', 'labs', 'prescriptions', 'grooming'] as Tab[]).map(renderTabButton)}
         </nav>
 
         {/* ========================================================
@@ -466,34 +517,41 @@ export default function PatientRecord() {
           </div>
 
         </div>
+      </main>
 
-        {/* ========================================================
-            BENTO CARD 3: CONTENIDO DE PESTAÑAS CLÍNICAS
-            ======================================================== */}
-        <section className="rounded-[32px] bg-surface-container-lowest/85 backdrop-blur-xl border border-surface-container-high p-6 md:p-8 min-h-[420px] shadow-sm print:p-0 print:border-none print:shadow-none print:bg-white print:w-full">
+      {/* Pop-up Responsivo por Sección Clínica */}
+      {activeTab && (
+        <PatientSectionModal
+          isOpen={!!activeTab}
+          title={tabMeta[activeTab].label}
+          subtitle={`${patient.name} · ${displaySpecies} — ${tabMeta[activeTab].subtitle}`}
+          icon={tabMeta[activeTab].icon}
+          onClose={handleCloseTabModal}
+          closeLabel={t('Cerrar ventana', 'Close dialog')}
+        >
           {activeTab === 'activity' && (
-             <ActivityTimeline patientId={patient.id} />
+            <ActivityTimeline patientId={patient.id} />
           )}
           {activeTab === 'history' && (
-             <ClinicalHistoryTab patientId={patient.id} isDeceased={isDeceased} />
+            <ClinicalHistoryTab patientId={patient.id} isDeceased={isDeceased} />
           )}
           {activeTab === 'vaccines' && (
-             <VaccinesTab patientId={patient.id} isDeceased={isDeceased} />
+            <VaccinesTab patientId={patient.id} isDeceased={isDeceased} />
           )}
           {activeTab === 'surgeries' && (
-             <SurgeriesTab patientId={patient.id} isDeceased={isDeceased} />
+            <SurgeriesTab patientId={patient.id} isDeceased={isDeceased} />
           )}
           {activeTab === 'labs' && (
-             <LabResultsTab patientId={patient.id} isDeceased={isDeceased} />
+            <LabResultsTab patientId={patient.id} isDeceased={isDeceased} />
           )}
           {activeTab === 'prescriptions' && (
-             <PrescriptionsTab patientId={patient.id} isDeceased={isDeceased} />
+            <PrescriptionsTab patientId={patient.id} isDeceased={isDeceased} />
           )}
           {activeTab === 'grooming' && (
-             <GroomingTab patientId={patient.id} isDeceased={isDeceased} />
+            <GroomingTab patientId={patient.id} isDeceased={isDeceased} />
           )}
-        </section>
-      </main>
+        </PatientSectionModal>
+      )}
 
       {/* Modales */}
       {showStatusModal && (

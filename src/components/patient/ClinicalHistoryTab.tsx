@@ -232,7 +232,7 @@ export function ClinicalHistoryTab({ patientId, isDeceased }: { patientId: strin
 
   return (
     <div className="flex flex-col gap-6 relative">
-      <div className="flex justify-between items-center bg-surface sticky top-0 z-10 py-2 border-b border-surface-variant md:border-none md:static md:bg-transparent">
+      <div className="flex flex-wrap justify-between items-center gap-3 pb-2 border-b border-surface-variant md:border-none">
         <h3 className="font-headline-lg m-0 text-on-surface">{t('Historia Clínica', 'Clinical History')}</h3>
         {!isDeceased && !isAdding && (
           <Button variant="primary" onClick={() => { setEditId(null); setDraftAnatomyPoints([]); setShowAnatomySection(false); setIsAdding(true); }} className="shadow-sm">

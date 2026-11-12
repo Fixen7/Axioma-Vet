@@ -214,7 +214,7 @@ export function SurgeriesTab({ patientId, isDeceased }: { patientId: string, isD
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <h3 className="font-headline-lg m-0 text-on-surface">{t('Historial de Cirugías', 'Surgery History')}</h3>
         {!isDeceased && !isAdding && (
           <Button variant="primary" onClick={() => { setEditId(null); setDraftAnatomyPoints([]); setShowAnatomySection(false); setIsAdding(true); }}>
