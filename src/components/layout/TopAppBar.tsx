@@ -2,6 +2,7 @@ import { ArrowLeft, Bell, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../i18n';
+import { ReleaseNotesButton } from '../ReleaseNotesModal';
 
 interface TopAppBarProps {
   title: string;
@@ -44,6 +45,7 @@ export function TopAppBar({ title, subtitle, showBack = true }: TopAppBarProps) 
         </div>
       </div>
       <div className="flex items-center gap-2">
+        <ReleaseNotesButton className="!w-10 !h-10 !p-2" />
         <button className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors active:scale-95 text-on-surface-variant">
           <Bell className="w-6 h-6" />
         </button>

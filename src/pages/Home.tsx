@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useVetContext } from '../context/VetContext';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
+import { ReleaseNotesButton } from '../components/ReleaseNotesModal';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -25,8 +26,9 @@ export default function Home() {
       <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-primary/20 rounded-full blur-[100px] pointer-events-none animate-pulse-slow"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
-      {/* Top right floating actions */}
+      {/* Top right actions (non-overlapping inline flex) */}
       <div className="absolute top-4 right-4 md:top-8 md:right-8 z-20 flex items-center gap-2">
+        <ReleaseNotesButton />
         <button 
           onClick={() => {
             const coreUrl = import.meta.env.VITE_CORE_URL;
