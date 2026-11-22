@@ -545,7 +545,7 @@ export default function PatientRecord() {
             <LabResultsTab patientId={patient.id} isDeceased={isDeceased} />
           )}
           {activeTab === 'prescriptions' && (
-            <PrescriptionsTab patientId={patient.id} isDeceased={isDeceased} />
+            <PrescriptionsTab patientId={patient.id} isDeceased={isDeceased} patient={patient} />
           )}
           {activeTab === 'grooming' && (
             <GroomingTab patientId={patient.id} isDeceased={isDeceased} />

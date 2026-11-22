@@ -43,6 +43,16 @@ export interface Consultation extends BaseEntity {
   nextControl?: string; // YYYY-MM-DD
 }
 
+export interface PrescriptionItem {
+  id?: string;
+  medication: string;
+  presentation?: string;
+  dosage: string;
+  frequency?: string;
+  duration?: string;
+  indications?: string;
+}
+
 export interface Prescription extends BaseEntity {
   patientId: string;
   veterinarian: string;
@@ -53,6 +63,7 @@ export interface Prescription extends BaseEntity {
   duration: string;
   indications: string;
   date: string; // YYYY-MM-DD
+  items?: PrescriptionItem[];
 }
 
 export interface Vaccine extends BaseEntity {
