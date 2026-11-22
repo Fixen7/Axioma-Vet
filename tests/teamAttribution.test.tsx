@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { buildInsertPayload, buildUpdatePayload } from '../src/services/SupabaseDataService';
+import { buildInsertPayload, buildUpdatePayload, unsupportedColumnsByTable } from '../src/services/SupabaseDataService';
 import { ActivityTimeline } from '../src/components/patient/ActivityTimeline';
 
 const mockGetConsultations = vi.fn();
@@ -137,5 +137,10 @@ describe('Team Attribution & Individual Activity in Axioma-Vet', () => {
 
     expect(screen.getByText(/Vacuna: Rabia/)).toBeTruthy();
     expect(screen.queryByText(/Primer Registro/)).toBeNull();
+  });
+
+  it('unsupportedColumnsByTable marks updated_by as unsupported for prescriptions to avoid schema cache error', () => {
+    expect(unsupportedColumnsByTable.prescriptions).toBeDefined();
+    expect(unsupportedColumnsByTable.prescriptions.has('updated_by')).toBe(true);
   });
 });

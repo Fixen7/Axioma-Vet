@@ -57,6 +57,14 @@ export function buildInsertPayload<T extends Record<string, any>>(
   return snake;
 }
 
+/**
+ * Dynamic registry of columns known not to exist in physical Supabase tables.
+ * Pre-populated for legacy tables like `prescriptions` which don't have `updated_by`.
+ */
+export const unsupportedColumnsByTable: Record<string, Set<string>> = {
+  prescriptions: new Set(['updated_by']),
+};
+
 export class SupabaseDataService implements IDataService {
   private activeWorkspaceId: string | null = null;
 
@@ -75,24 +83,83 @@ export class SupabaseDataService implements IDataService {
     return user.id;
   }
 
+  private isMissingColumnError(err: any): string | null {
+    if (!err) return null;
+    const msg = `${err.message || ''} ${err.details || ''} ${err.hint || ''}`;
+    const match = msg.match(/Could not find the ['"]([^'"]+)['"] column/i) 
+      || msg.match(/column ['"]([^'"]+)['"] of relation/i)
+      || msg.match(/column ['"]([^'"]+)['"] does not exist/i);
+    return match ? match[1] : null;
+  }
+
+  private sanitizePayloadForTable(table: string, payload: Record<string, any>): Record<string, any> {
+    const unsupported = unsupportedColumnsByTable[table];
+    if (!unsupported || unsupported.size === 0) return { ...payload };
+    const sanitized = { ...payload };
+    for (const col of unsupported) {
+      delete sanitized[col];
+    }
+    return sanitized;
+  }
+
+  private recordUnsupportedColumn(table: string, column: string) {
+    if (!unsupportedColumnsByTable[table]) {
+      unsupportedColumnsByTable[table] = new Set();
+    }
+    unsupportedColumnsByTable[table].add(column);
+  }
+
   private async upsertScopedEntity<T>(table: string, entity: Record<string, any> & { id?: string }): Promise<T> {
     const userId = await this.getUserId();
     const wsId = this.getWorkspaceId();
+
     if (entity.id) {
-      const snakeData = buildUpdatePayload(entity, userId);
-      const { data, error } = await supabase
+      let snakeData = this.sanitizePayloadForTable(table, buildUpdatePayload(entity, userId));
+      let { data, error } = await supabase
         .from(table)
         .update(snakeData)
         .eq('id', entity.id)
         .eq('workspace_id', wsId)
         .select()
         .single();
+
+      if (error) {
+        const missingCol = this.isMissingColumnError(error);
+        if (missingCol && missingCol in snakeData) {
+          console.warn(`[SupabaseDataService] Column '${missingCol}' missing in table '${table}'. Retrying without it.`);
+          this.recordUnsupportedColumn(table, missingCol);
+          snakeData = this.sanitizePayloadForTable(table, snakeData);
+          const retry = await supabase
+            .from(table)
+            .update(snakeData)
+            .eq('id', entity.id)
+            .eq('workspace_id', wsId)
+            .select()
+            .single();
+          data = retry.data;
+          error = retry.error;
+        }
+      }
+
       if (error) throw error;
       return toCamel(data) as T;
     }
 
-    const snakeData = buildInsertPayload(entity, userId, wsId);
-    const { data, error } = await supabase.from(table).insert(snakeData).select().single();
+    let snakeData = this.sanitizePayloadForTable(table, buildInsertPayload(entity, userId, wsId));
+    let { data, error } = await supabase.from(table).insert(snakeData).select().single();
+
+    if (error) {
+      const missingCol = this.isMissingColumnError(error);
+      if (missingCol && missingCol in snakeData) {
+        console.warn(`[SupabaseDataService] Column '${missingCol}' missing in table '${table}'. Retrying without it.`);
+        this.recordUnsupportedColumn(table, missingCol);
+        snakeData = this.sanitizePayloadForTable(table, snakeData);
+        const retry = await supabase.from(table).insert(snakeData).select().single();
+        data = retry.data;
+        error = retry.error;
+      }
+    }
+
     if (error) throw error;
     return toCamel(data) as T;
   }
