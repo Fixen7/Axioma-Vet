@@ -36,8 +36,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
   const [hasStockAccess, setHasStockAccess] = useState(false);
+  const [userOrganizations, setUserOrganizations] = useState<{ id: string; name: string }[]>([]);
 
   const isPublicRoute = window.location.pathname === '/login';
+
+  const switchWorkspace = async (newWorkspaceId: string) => {
+    setIsLoading(true);
+    localStorage.setItem('axioma-vet-workspace', newWorkspaceId);
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    await checkContextAndSetUser(currentSession);
+  };
 
   const checkContextAndSetUser = async (currentSession: Session | null) => {
     if (!currentSession) {
@@ -97,6 +105,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       if (data.user) {
         setCoreUser(data.user);
+      }
+      if (Array.isArray(data.organizations)) {
+        setUserOrganizations(data.organizations);
       }
       setWorkspaceMembers(Array.isArray(data.workspaceMembers) ? data.workspaceMembers : []);
       syncCoreLanguagePreference(data.user?.language);
@@ -186,6 +197,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const urlParams = new URLSearchParams(window.location.search);
       const ticket = urlParams.get('ticket');
+      const paramWorkspaceId = urlParams.get('workspaceId');
+
+      if (paramWorkspaceId) {
+        localStorage.setItem('axioma-vet-workspace', paramWorkspaceId);
+        urlParams.delete('workspaceId');
+        const newSearch = urlParams.toString();
+        const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '');
+        window.history.replaceState(null, '', newUrl);
+      }
 
       if (ticket) {
         setIsLoading(true);
@@ -325,6 +345,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                       `Axioma Vet is not active for the "${activeWorkspace?.name || 'selected'}" workspace. Purchase a plan to enable it right away.`
                     )}
             </p>
+
+            {userOrganizations.length > 1 && (
+              <div className="mb-5 p-3.5 bg-surface-variant/40 rounded-2xl border border-outline-variant/40 text-left">
+                <label className="block text-xs font-semibold text-on-surface-variant mb-1.5">
+                  {t('Espacio de trabajo seleccionado:', 'Selected workspace:')}
+                </label>
+                <select
+                  value={activeWorkspace?.id || ''}
+                  onChange={(e) => switchWorkspace(e.target.value)}
+                  className="w-full bg-surface border border-outline-variant/60 rounded-xl px-3 py-2 text-sm text-on-surface font-medium focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer shadow-xs"
+                >
+                  {userOrganizations.map((org) => (
+                    <option key={org.id} value={org.id}>
+                      {org.name} {org.id === activeWorkspace?.id ? `(${t('Actual', 'Current')})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="space-y-3">
               <button 
