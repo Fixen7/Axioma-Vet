@@ -1,15 +1,18 @@
-import { Plus, Search, CalendarDays, LogOut, HeartPulse } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Search, CalendarDays, LogOut, HeartPulse, FileSpreadsheet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useVetContext } from '../context/VetContext';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import { ReleaseNotesButton } from '../components/ReleaseNotesModal';
+import { ExcelMigrationModal } from '../components/patient/ExcelMigrationModal';
 
 export default function Home() {
   const navigate = useNavigate();
   const { settings } = useVetContext();
   const { signOut } = useAuth();
   const { t } = useTranslation();
+  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -29,6 +32,14 @@ export default function Home() {
       {/* Top right actions (non-overlapping inline flex) */}
       <div className="absolute top-4 right-4 md:top-8 md:right-8 z-20 flex items-center gap-2">
         <ReleaseNotesButton />
+        <button 
+          onClick={() => setIsExcelModalOpen(true)} 
+          title={t('Copia de Seguridad y Migración Excel', 'Backup & Excel Migration')}
+          className="p-3 rounded-full bg-surface-container-lowest/50 hover:bg-emerald-500/10 shadow-sm hover:shadow text-on-surface-variant hover:text-emerald-700 transition-all duration-300 backdrop-blur-md cursor-pointer flex items-center gap-1.5"
+        >
+          <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+          <span className="text-xs font-semibold pr-1 hidden sm:inline">{t('Datos / Excel', 'Data / Excel')}</span>
+        </button>
         <button 
           onClick={() => {
             const coreUrl = import.meta.env.VITE_CORE_URL;
@@ -145,8 +156,36 @@ export default function Home() {
             </div>
           </button>
         </div>
+
+        {/* Quick Bar: Centro de Datos y Excel */}
+        <div className="w-full p-4 sm:p-5 rounded-[28px] bg-surface-container-lowest/80 backdrop-blur-xl border border-surface-container-high flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 shadow-inner">
+              <FileSpreadsheet className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="font-bold text-sm sm:text-base text-on-surface m-0">
+                {t('Respaldo y Migración en Excel', 'Excel Backup & Migration')}
+              </p>
+              <p className="text-xs text-on-surface-variant m-0 mt-0.5">
+                {t('Exporta tu historial clínico completo a .xlsx o migra pacientes desde hojas de cálculo.', 'Export your complete clinic history to .xlsx or migrate patients from spreadsheets.')}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsExcelModalOpen(true)}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer shrink-0"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>{t('Abrir Centro Excel', 'Open Excel Center')}</span>
+          </button>
+        </div>
       </main>
 
+      <ExcelMigrationModal
+        isOpen={isExcelModalOpen}
+        onClose={() => setIsExcelModalOpen(false)}
+      />
     </div>
   );
 }

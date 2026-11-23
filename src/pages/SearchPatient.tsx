@@ -1,15 +1,18 @@
 import { useState, useMemo } from 'react';
-import { ArrowLeft, Search, Dog, Cat, Bird, PersonStanding, Phone, Calendar, HeartPulse, Info } from 'lucide-react';
+import { ArrowLeft, Search, Dog, Cat, Bird, PersonStanding, Phone, Calendar, HeartPulse, Info, Download, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useVetContext } from '../context/VetContext';
 import type { Patient } from '../services/types';
 import { useTranslation } from '../i18n';
+import { ExcelMigrationModal } from '../components/patient/ExcelMigrationModal';
 
 export default function SearchPatient() {
   const navigate = useNavigate();
   const { patients } = useVetContext();
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
+  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
+  const [excelModalTab, setExcelModalTab] = useState<'export' | 'import'>('export');
 
   const filteredPatients = useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -247,11 +250,37 @@ export default function SearchPatient() {
           </div>
         </div>
 
-        <div className="w-full flex items-center justify-between mt-4">
+        <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-4">
           <h2 className="font-headline-md text-on-surface-variant m-0">
             {query ? t(`Resultados para "${query}"`, `Results for "${query}"`) : t('Todos los pacientes', 'All patients')} 
             <span className="font-body-md text-outline ml-2">({filteredPatients.length})</span>
           </h2>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setExcelModalTab('export');
+                setIsExcelModalOpen(true);
+              }}
+              className="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
+              title={t('Exportar y respaldar datos a Excel', 'Export and backup data to Excel')}
+            >
+              <Download className="w-4 h-4 text-emerald-600" />
+              <span>{t('Exportar Excel', 'Export Excel')}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setExcelModalTab('import');
+                setIsExcelModalOpen(true);
+              }}
+              className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
+              title={t('Migrar pacientes desde archivo Excel', 'Migrate patients from Excel file')}
+            >
+              <Upload className="w-4 h-4 text-emerald-600" />
+              <span>{t('Migrar desde Excel', 'Migrate from Excel')}</span>
+            </button>
+          </div>
         </div>
 
         {filteredPatients.length === 0 ? (
@@ -267,6 +296,12 @@ export default function SearchPatient() {
           </div>
         )}
       </main>
+
+      <ExcelMigrationModal
+        isOpen={isExcelModalOpen}
+        onClose={() => setIsExcelModalOpen(false)}
+        defaultTab={excelModalTab}
+      />
     </div>
   );
 }

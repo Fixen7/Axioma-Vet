@@ -27,8 +27,9 @@ interface VetContextType {
   deleteConsultation: (id: string) => Promise<void>;
   
   getPrescriptions: (patientId: string) => Promise<Prescription[]>;
+  getAllPrescriptions: () => Promise<Prescription[]>;
   savePrescription: (prescription: Omit<Prescription, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }) => Promise<Prescription>;
-  deletePrescription: (id: string) => Promise<void>;
+  deletePrescription(id: string): Promise<void>;
   
   getVaccines: (patientId: string) => Promise<Vaccine[]>;
   getAllVaccines: () => Promise<Vaccine[]>;
@@ -36,6 +37,7 @@ interface VetContextType {
   deleteVaccine: (id: string) => Promise<void>;
   
   getLabs: (patientId: string) => Promise<LabResult[]>;
+  getAllLabs: () => Promise<LabResult[]>;
   saveLab: (lab: Omit<LabResult, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }) => Promise<LabResult>;
   deleteLab: (id: string) => Promise<void>;
   
@@ -45,10 +47,12 @@ interface VetContextType {
   deleteSurgery: (id: string) => Promise<void>;
   
   getGroomings: (patientId: string) => Promise<Grooming[]>;
+  getAllGroomings: () => Promise<Grooming[]>;
   saveGrooming: (grooming: Omit<Grooming, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }) => Promise<Grooming>;
   deleteGrooming: (id: string) => Promise<void>;
   
   getWeightRecords: (patientId: string) => Promise<WeightRecord[]>;
+  getAllWeightRecords: () => Promise<WeightRecord[]>;
   saveWeightRecord: (record: Omit<WeightRecord, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }) => Promise<WeightRecord>;
   deleteWeightRecord: (id: string) => Promise<void>;
 }
@@ -153,6 +157,7 @@ export const VetProvider = ({ children }: { children: ReactNode }) => {
   const deleteConsultation = async (id: string) => dataService.deleteConsultation(id);
 
   const getPrescriptions = useCallback((id: string) => dataService.getPrescriptionsByPatient(id), []);
+  const getAllPrescriptions = useCallback(() => dataService.getAllPrescriptions(), []);
   const savePrescription = async (p: any) => dataService.savePrescription(p);
   const deletePrescription = async (id: string) => dataService.deletePrescription(id);
 
@@ -162,6 +167,7 @@ export const VetProvider = ({ children }: { children: ReactNode }) => {
   const deleteVaccine = async (id: string) => dataService.deleteVaccine(id);
 
   const getLabs = useCallback((id: string) => dataService.getLabsByPatient(id), []);
+  const getAllLabs = useCallback(() => dataService.getAllLabs(), []);
   const saveLab = async (l: any) => dataService.saveLab(l);
   const deleteLab = async (id: string) => dataService.deleteLab(id);
 
@@ -171,10 +177,12 @@ export const VetProvider = ({ children }: { children: ReactNode }) => {
   const deleteSurgery = async (id: string) => dataService.deleteSurgery(id);
 
   const getGroomings = useCallback((id: string) => dataService.getGroomingsByPatient(id), []);
+  const getAllGroomings = useCallback(() => dataService.getAllGroomings(), []);
   const saveGrooming = async (g: any) => dataService.saveGrooming(g);
   const deleteGrooming = async (id: string) => dataService.deleteGrooming(id);
 
   const getWeightRecords = useCallback((id: string) => dataService.getWeightRecordsByPatient(id), []);
+  const getAllWeightRecords = useCallback(() => dataService.getAllWeightRecords(), []);
   const saveWeightRecord = async (w: any) => dataService.saveWeightRecord(w);
   const deleteWeightRecord = async (id: string) => dataService.deleteWeightRecord(id);
 
@@ -192,12 +200,12 @@ export const VetProvider = ({ children }: { children: ReactNode }) => {
       saveSettings: saveSettingsToService,
       isLoadingSettings,
       getConsultations, getAllConsultations, saveConsultation, deleteConsultation,
-      getPrescriptions, savePrescription, deletePrescription,
+      getPrescriptions, getAllPrescriptions, savePrescription, deletePrescription,
       getVaccines, getAllVaccines, saveVaccine, deleteVaccine,
-      getLabs, saveLab, deleteLab,
+      getLabs, getAllLabs, saveLab, deleteLab,
       getSurgeries, getAllSurgeries, saveSurgery, deleteSurgery,
-      getGroomings, saveGrooming, deleteGrooming,
-      getWeightRecords, saveWeightRecord, deleteWeightRecord,
+      getGroomings, getAllGroomings, saveGrooming, deleteGrooming,
+      getWeightRecords, getAllWeightRecords, saveWeightRecord, deleteWeightRecord,
     }}>
       {children}
     </VetContext.Provider>

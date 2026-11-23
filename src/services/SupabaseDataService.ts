@@ -236,6 +236,16 @@ export class SupabaseDataService implements IDataService {
   }
 
   // PRESCRIPTIONS
+  async getAllPrescriptions(): Promise<Prescription[]> {
+    const { data, error } = await supabase
+      .from('prescriptions')
+      .select('*')
+      .eq('workspace_id', this.getWorkspaceId())
+      .order('date', { ascending: false });
+    if (error) throw error;
+    return toCamel(data) as Prescription[];
+  }
+
   async getPrescriptionsByPatient(patientId: string): Promise<Prescription[]> {
     const { data, error } = await supabase.from('prescriptions').select('*').eq('patient_id', patientId).eq('workspace_id', this.getWorkspaceId()).order('date', { ascending: false });
     if (error) throw error;
@@ -274,6 +284,16 @@ export class SupabaseDataService implements IDataService {
   }
 
   // LABS
+  async getAllLabs(): Promise<LabResult[]> {
+    const { data, error } = await supabase
+      .from('lab_results')
+      .select('*')
+      .eq('workspace_id', this.getWorkspaceId())
+      .order('date', { ascending: false });
+    if (error) throw error;
+    return toCamel(data) as LabResult[];
+  }
+
   async getLabsByPatient(patientId: string): Promise<LabResult[]> {
     const { data, error } = await supabase.from('lab_results').select('*').eq('patient_id', patientId).eq('workspace_id', this.getWorkspaceId()).order('date', { ascending: false });
     if (error) throw error;
@@ -350,6 +370,16 @@ export class SupabaseDataService implements IDataService {
   }
 
   // GROOMINGS
+  async getAllGroomings(): Promise<Grooming[]> {
+    const { data, error } = await supabase
+      .from('groomings')
+      .select('*')
+      .eq('workspace_id', this.getWorkspaceId())
+      .order('date', { ascending: false });
+    if (error) throw error;
+    return toCamel(data) as Grooming[];
+  }
+
   async getGroomingsByPatient(patientId: string): Promise<Grooming[]> {
     const { data, error } = await supabase.from('groomings').select('*').eq('patient_id', patientId).eq('workspace_id', this.getWorkspaceId()).order('date', { ascending: false });
     if (error) throw error;
@@ -366,6 +396,16 @@ export class SupabaseDataService implements IDataService {
   }
 
   // WEIGHT RECORDS
+  async getAllWeightRecords(): Promise<WeightRecord[]> {
+    const { data, error } = await supabase
+      .from('weight_records')
+      .select('*')
+      .eq('workspace_id', this.getWorkspaceId())
+      .order('date', { ascending: false });
+    if (error) throw error;
+    return toCamel(data) as WeightRecord[];
+  }
+
   async getWeightRecordsByPatient(patientId: string): Promise<WeightRecord[]> {
     const { data, error } = await supabase.from('weight_records').select('*').eq('patient_id', patientId).eq('workspace_id', this.getWorkspaceId()).order('date', { ascending: false });
     if (error) throw error;

@@ -142,6 +142,7 @@ export interface IDataService {
   deleteConsultation(id: string): Promise<void>;
   
   // Prescriptions
+  getAllPrescriptions?(): Promise<Prescription[]>;
   getPrescriptionsByPatient(patientId: string): Promise<Prescription[]>;
   savePrescription(prescription: Omit<Prescription, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }): Promise<Prescription>;
   deletePrescription(id: string): Promise<void>;
@@ -153,6 +154,7 @@ export interface IDataService {
   deleteVaccine(id: string): Promise<void>;
   
   // Labs
+  getAllLabs?(): Promise<LabResult[]>;
   getLabsByPatient(patientId: string): Promise<LabResult[]>;
   saveLab(lab: Omit<LabResult, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }): Promise<LabResult>;
   deleteLab(id: string): Promise<void>;
@@ -172,11 +174,13 @@ export interface IDataService {
   saveManualEvent(event: Omit<ManualEvent, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }): Promise<ManualEvent>;
 
   // Groomings
+  getAllGroomings?(): Promise<Grooming[]>;
   getGroomingsByPatient(patientId: string): Promise<Grooming[]>;
   saveGrooming(grooming: Omit<Grooming, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }): Promise<Grooming>;
   deleteGrooming(id: string): Promise<void>;
 
   // Weight Records
+  getAllWeightRecords?(): Promise<WeightRecord[]>;
   getWeightRecordsByPatient(patientId: string): Promise<WeightRecord[]>;
   saveWeightRecord(record: Omit<WeightRecord, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> & { id?: string }): Promise<WeightRecord>;
   deleteWeightRecord(id: string): Promise<void>;
