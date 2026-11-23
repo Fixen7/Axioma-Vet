@@ -9,11 +9,13 @@ import {
   Languages, 
   CheckCircle2,
   Info,
-  Activity
+  Activity,
+  FileSpreadsheet,
+  FileText
 } from 'lucide-react';
 import { useTranslation } from '../i18n';
 
-const STORAGE_KEY = 'axioma_vet_release_notes_v2_seen';
+const STORAGE_KEY = 'axioma_vet_release_notes_v2_5_seen';
 
 // Blinking expires after ~2 months from launch (Active until January 15, 2027)
 const BLINK_EXPIRY_DATE = new Date('2027-01-15T23:59:59Z');
@@ -114,6 +116,22 @@ export function ReleaseNotesModal() {
 
   const features = [
     {
+      icon: <FileSpreadsheet className="w-5 h-5 text-emerald-600" />,
+      title: isEs ? 'Centro de Respaldo y Migración en Excel (.xlsx)' : 'Full Excel Backup & Smart Migrator (.xlsx)',
+      desc: isEs
+        ? 'Exporta toda la base de datos de tu clínica en 1 clic en un libro multidivisión de 8 hojas (Pacientes, Consultas, Recetas, Vacunas, Cirugías, Laboratorio, Peluquería y Peso). Además, incluye importador inteligente con plantilla oficial descargable y validación de integridad para migrar datos desde cualquier hoja de cálculo.'
+        : 'Export your clinic database in 1 click across 8 structured sheets (Patients, Consultations, Prescriptions, Vaccines, Surgeries, Labs, Grooming, and Weight). Includes smart importer with downloadable template and clinical integrity validation.',
+      tag: isEs ? 'Datos & Excel' : 'Data & Excel'
+    },
+    {
+      icon: <FileText className="w-5 h-5 text-indigo-600" />,
+      title: isEs ? 'Recetas Médicas Multi-Fármaco e Impresión con Membrete' : 'Multi-Drug Prescriptions & Branded Print',
+      desc: isEs
+        ? 'Prescribe múltiples medicamentos en una sola receta con el botón (+) sin tener que guardar uno por uno. Genera recetas impresas oficiales en alta definición con el nombre de tu clínica y diseño veterinario profesional.'
+        : 'Prescribe multiple drugs on a single prescription with the (+) button. Generate high-definition printed prescriptions carrying your clinic branding and veterinarian signature lines.',
+      tag: isEs ? 'Recetas Médicas' : 'Prescriptions'
+    },
+    {
       icon: <Activity className="w-5 h-5 text-rose-500" />,
       title: isEs ? 'Selector Anatómico Interactivo (Esquema Corporal)' : 'Interactive Anatomy Selector (Body Map)',
       desc: isEs
@@ -188,7 +206,7 @@ export function ReleaseNotesModal() {
 
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold mb-3">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>{isEs ? 'Versión Oficial 2.4 — Producción' : 'Official Release 2.4 — Production'}</span>
+            <span>{isEs ? 'Versión Oficial 2.5 — Producción' : 'Official Release 2.5 — Production'}</span>
           </div>
 
           <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">
