@@ -6,7 +6,7 @@
  * (The developer alerts instance @Axioma_Taxes_bot is isolated for infra/payment approvals).
  */
 
-const VET_CLIENT_BOT_TOKEN = (import.meta as any).env?.VITE_VET_TELEGRAM_BOT_TOKEN || '9028028768:AAHbISh0m3W_Xs4vlRnK-sOxZvWoJEgx6h8';
+const VET_CLIENT_BOT_TOKEN = (import.meta as any).env?.VITE_VET_TELEGRAM_BOT_TOKEN || '';
 
 export interface TelegramNotificationPayload {
   chatId: string;
@@ -25,6 +25,11 @@ export interface TelegramNotificationPayload {
  * Sends a notification message to the clinic's configured Telegram Chat ID.
  */
 export async function sendVetTelegramNotification(payload: TelegramNotificationPayload): Promise<{ success: boolean; messageId?: number; error?: string }> {
+  if (!VET_CLIENT_BOT_TOKEN) {
+    console.warn('[Vet Telegram] VITE_VET_TELEGRAM_BOT_TOKEN no configurado en variables de entorno.');
+    return { success: false, error: 'VITE_VET_TELEGRAM_BOT_TOKEN no configurado.' };
+  }
+
   if (!payload.chatId) {
     return { success: false, error: 'No Telegram Chat ID configured for this clinic.' };
   }
