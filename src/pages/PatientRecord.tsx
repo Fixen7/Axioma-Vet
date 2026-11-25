@@ -22,6 +22,8 @@ import { ClinicalMemoryCard } from '../components/patient/ClinicalMemoryCard';
 import { buildClinicalMemory, type ClinicalMemoryAnalysis } from '../utils/clinicalMemory';
 import type { Consultation, Prescription, WeightRecord, Surgery } from '../services/types';
 import { useTranslation } from '../i18n';
+import { useAuth } from '../context/AuthContext';
+import { dispatchVetTelegramNotification } from '../services/vetTelegramNotificationService';
 
 type Tab = 'activity' | 'history' | 'vaccines' | 'surgeries' | 'labs' | 'prescriptions' | 'grooming';
 
@@ -29,7 +31,16 @@ export default function PatientRecord() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { patients, updatePatientStatus, deletePatient } = useVetContext();
+  const { patients, updatePatientStatus, deletePatient, settings } = useVetContext();
+  
+  let workspaceId: string | null = null;
+  try {
+    const auth = useAuth();
+    workspaceId = auth.activeWorkspaceId;
+  } catch {
+    // Graceful fallback for isolated test environments or guest views
+    workspaceId = typeof window !== 'undefined' ? localStorage.getItem('axioma-vet-workspace') : null;
+  }
   
   const [activeTab, setActiveTab] = useState<Tab | null>(null);
 
@@ -153,9 +164,30 @@ export default function PatientRecord() {
   };
 
   const handleSaveStatus = async () => {
-    await updatePatientStatus(patient.id, statusForm.status as any, statusForm.behaviorObservation);
+    const prevStatus = patient.status;
+    const newStatus = statusForm.status;
+    await updatePatientStatus(patient.id, newStatus as any, statusForm.behaviorObservation);
     setShowStatusModal(false);
     refreshMemory();
+
+    // Trigger Telegram alert if changed to HIGH_RISK (critical patient)
+    if (newStatus === 'HIGH_RISK' && prevStatus !== 'HIGH_RISK') {
+      try {
+        await dispatchVetTelegramNotification({
+          type: 'critical_patient',
+          clinicName: settings?.clinicName || 'Axioma Vet',
+          patientName: patient.name,
+          species: patient.species,
+          ownerName: patient.ownerName,
+          ownerPhone: patient.ownerPhone,
+          details: statusForm.behaviorObservation 
+            ? `${statusForm.behaviorObservation}` 
+            : t('Paciente marcado en estado de alto riesgo clínico.', 'Patient marked in high clinical risk state.')
+        }, undefined, workspaceId);
+      } catch (err) {
+        console.warn('[Telegram] Could not dispatch critical patient alert:', err);
+      }
+    }
   };
 
   const handleSaveWeight = async () => {

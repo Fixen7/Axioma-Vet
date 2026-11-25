@@ -1,18 +1,27 @@
-import { useState } from 'react';
-import { Plus, Search, CalendarDays, LogOut, HeartPulse, FileSpreadsheet } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, CalendarDays, LogOut, HeartPulse, FileSpreadsheet, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useVetContext } from '../context/VetContext';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import { ReleaseNotesButton } from '../components/ReleaseNotesModal';
 import { ExcelMigrationModal } from '../components/patient/ExcelMigrationModal';
+import { NotificationSettingsModal } from '../components/NotificationSettingsModal';
+import { loadTelegramNotificationConfig } from '../services/vetTelegramNotificationService';
 
 export default function Home() {
   const navigate = useNavigate();
   const { settings } = useVetContext();
-  const { signOut } = useAuth();
+  const { signOut, activeWorkspaceId } = useAuth();
   const { t } = useTranslation();
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
+  const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
+  const [isTelegramEnabled, setIsTelegramEnabled] = useState(false);
+
+  useEffect(() => {
+    const cfg = loadTelegramNotificationConfig(activeWorkspaceId);
+    setIsTelegramEnabled(cfg.enabled && !!cfg.chatId);
+  }, [activeWorkspaceId, isNotifModalOpen]);
 
   const handleSignOut = async () => {
     try {
@@ -32,6 +41,20 @@ export default function Home() {
       {/* Top right actions (non-overlapping inline flex) */}
       <div className="absolute top-4 right-4 md:top-8 md:right-8 z-20 flex items-center gap-2">
         <ReleaseNotesButton />
+        <button 
+          onClick={() => setIsNotifModalOpen(true)}
+          title={t('Notificaciones en Telegram', 'Telegram Notifications')}
+          aria-label="Abrir notificaciones en Telegram"
+          className="relative p-3 rounded-full bg-surface-container-lowest/50 hover:bg-blue-500/10 shadow-sm hover:shadow text-on-surface-variant hover:text-blue-600 transition-all duration-300 backdrop-blur-md cursor-pointer flex items-center justify-center"
+        >
+          <Bell className="w-5 h-5 text-blue-600" />
+          {isTelegramEnabled && (
+            <span 
+              title={t('Notificaciones activas', 'Notifications active')}
+              className="absolute top-2 right-2 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white" 
+            />
+          )}
+        </button>
         <button 
           onClick={() => setIsExcelModalOpen(true)} 
           title={t('Copia de Seguridad y Migración Excel', 'Backup & Excel Migration')}
@@ -185,6 +208,11 @@ export default function Home() {
       <ExcelMigrationModal
         isOpen={isExcelModalOpen}
         onClose={() => setIsExcelModalOpen(false)}
+      />
+
+      <NotificationSettingsModal
+        isOpen={isNotifModalOpen}
+        onClose={() => setIsNotifModalOpen(false)}
       />
     </div>
   );

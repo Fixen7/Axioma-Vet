@@ -1,16 +1,98 @@
+import {
+  type ClinicTelegramNotificationConfig,
+  type ClinicNotificationSchedule,
+  type NotificationTriggerType,
+  DEFAULT_TELEGRAM_NOTIFICATION_CONFIG
+} from './telegramNotificationTypes';
+
+export * from './telegramNotificationTypes';
+
+const STORAGE_PREFIX = 'axioma_vet_telegram_config_';
+
 /**
- * Axioma Vet - End-User Telegram Notification Service
- * 
- * Separate instance dedicated exclusively to clinic staff and veterinarians
- * for patient alerts, appointment reminders, and clinical notifications.
- * (The developer alerts instance @Axioma_Taxes_bot is isolated for infra/payment approvals).
+ * Returns the effective Bot Token to use.
+ * Precedence: User-configured custom token -> VITE_VET_TELEGRAM_BOT_TOKEN env var -> Axioma default bot.
  */
+export function getEffectiveBotToken(customToken?: string): string {
+  if (customToken && customToken.trim()) {
+    return customToken.trim();
+  }
+  return (import.meta as any).env?.VITE_VET_TELEGRAM_BOT_TOKEN || '9028028768:AAGqjKsqN9awZ4vfNzaYK4UoKqUXm1dpKgE';
+}
 
-const VET_CLIENT_BOT_TOKEN = (import.meta as any).env?.VITE_VET_TELEGRAM_BOT_TOKEN || '';
+/**
+ * Loads the clinic/doctor Telegram notification configuration.
+ * Scoped by workspaceId (clinic tenant).
+ */
+export function loadTelegramNotificationConfig(workspaceId?: string | null): ClinicTelegramNotificationConfig {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return { ...DEFAULT_TELEGRAM_NOTIFICATION_CONFIG };
+  }
 
-export interface TelegramNotificationPayload {
-  chatId: string;
-  type: 'appointment_reminder' | 'vaccine_alert' | 'critical_patient' | 'test';
+  const key = `${STORAGE_PREFIX}${workspaceId || 'default'}`;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return { ...DEFAULT_TELEGRAM_NOTIFICATION_CONFIG };
+    const parsed = JSON.parse(raw);
+    return {
+      ...DEFAULT_TELEGRAM_NOTIFICATION_CONFIG,
+      ...parsed,
+      triggers: {
+        ...DEFAULT_TELEGRAM_NOTIFICATION_CONFIG.triggers,
+        ...(parsed.triggers || {})
+      },
+      schedule: {
+        ...DEFAULT_TELEGRAM_NOTIFICATION_CONFIG.schedule,
+        ...(parsed.schedule || {})
+      }
+    };
+  } catch (e) {
+    console.error('[TelegramService] Error loading config from storage:', e);
+    return { ...DEFAULT_TELEGRAM_NOTIFICATION_CONFIG };
+  }
+}
+
+/**
+ * Saves the clinic/doctor Telegram notification configuration.
+ */
+export function saveTelegramNotificationConfig(
+  config: ClinicTelegramNotificationConfig,
+  workspaceId?: string | null
+): void {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  const key = `${STORAGE_PREFIX}${workspaceId || 'default'}`;
+  try {
+    localStorage.setItem(key, JSON.stringify(config));
+  } catch (e) {
+    console.error('[TelegramService] Error saving config to storage:', e);
+  }
+}
+
+/**
+ * Validates if a notification should be delivered right now according to the schedule.
+ */
+export function isWithinNotificationSchedule(
+  schedule: ClinicNotificationSchedule,
+  currentDate = new Date()
+): boolean {
+  const currentDay = currentDate.getDay(); // 0 = Sunday, 1 = Monday, ...
+  if (!schedule.daysOfWeek.includes(currentDay)) {
+    return false;
+  }
+
+  const currentMinutes = currentDate.getHours() * 60 + currentDate.getMinutes();
+  
+  const [startH, startM] = schedule.startTime.split(':').map(Number);
+  const [endH, endM] = schedule.endTime.split(':').map(Number);
+  
+  const startMinutes = (startH || 0) * 60 + (startM || 0);
+  const endMinutes = (endH || 0) * 60 + (endM || 0);
+
+  return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+}
+
+export interface SendNotificationOptions {
+  type: NotificationTriggerType | 'test';
   clinicName: string;
   patientName?: string;
   species?: string;
@@ -19,23 +101,72 @@ export interface TelegramNotificationPayload {
   details?: string;
   date?: string;
   time?: string;
+  summaryItems?: Array<{ title: string; count: number | string }>;
+  forceIgnoreSchedule?: boolean; // For manual test messages
+}
+
+export interface SendNotificationResult {
+  success: boolean;
+  messageId?: number;
+  error?: string;
+  skippedReason?: 'disabled' | 'missing_chat_id' | 'missing_token' | 'trigger_inactive' | 'outside_schedule';
 }
 
 /**
- * Sends a notification message to the clinic's configured Telegram Chat ID.
+ * Sends a clinical or test notification to the configured Telegram chat.
  */
-export async function sendVetTelegramNotification(payload: TelegramNotificationPayload): Promise<{ success: boolean; messageId?: number; error?: string }> {
-  if (!VET_CLIENT_BOT_TOKEN) {
-    console.warn('[Vet Telegram] VITE_VET_TELEGRAM_BOT_TOKEN no configurado en variables de entorno.');
-    return { success: false, error: 'VITE_VET_TELEGRAM_BOT_TOKEN no configurado.' };
+export async function dispatchVetTelegramNotification(
+  payload: SendNotificationOptions,
+  configOverride?: ClinicTelegramNotificationConfig,
+  workspaceId?: string | null
+): Promise<SendNotificationResult> {
+  const config = configOverride || loadTelegramNotificationConfig(workspaceId);
+
+  // 1. Check if enabled (unless it's a test)
+  if (payload.type !== 'test' && !config.enabled) {
+    return { success: false, skippedReason: 'disabled' };
   }
 
-  if (!payload.chatId) {
-    return { success: false, error: 'No Telegram Chat ID configured for this clinic.' };
+  // 2. Check if Chat ID is configured
+  if (!config.chatId || !config.chatId.trim()) {
+    return { success: false, error: 'No Telegram Chat ID configurado.', skippedReason: 'missing_chat_id' };
   }
 
+  // 3. Check trigger preference
+  if (payload.type !== 'test') {
+    if (payload.type === 'appointment_reminder' && !config.triggers.appointments) {
+      return { success: false, skippedReason: 'trigger_inactive' };
+    }
+    if (payload.type === 'vaccine_alert' && !config.triggers.vaccines) {
+      return { success: false, skippedReason: 'trigger_inactive' };
+    }
+    if (payload.type === 'critical_patient' && !config.triggers.criticalPatients) {
+      return { success: false, skippedReason: 'trigger_inactive' };
+    }
+    if (payload.type === 'daily_digest' && !config.triggers.dailyDigest) {
+      return { success: false, skippedReason: 'trigger_inactive' };
+    }
+  }
+
+  // 4. Check schedule (critical alerts and test messages bypass schedule)
+  if (payload.type !== 'test' && payload.type !== 'critical_patient' && !payload.forceIgnoreSchedule) {
+    if (!isWithinNotificationSchedule(config.schedule)) {
+      return { success: false, skippedReason: 'outside_schedule' };
+    }
+  }
+
+  // 5. Check Bot Token
+  const token = getEffectiveBotToken(config.botToken);
+  if (!token) {
+    return {
+      success: false,
+      error: 'Bot Token no configurado. Ingresa un Bot Token propio o define VITE_VET_TELEGRAM_BOT_TOKEN.',
+      skippedReason: 'missing_token'
+    };
+  }
+
+  // 6. Build Message HTML
   let text = '';
-
   switch (payload.type) {
     case 'appointment_reminder':
       text = `🐾 <b>Recordatorio de Cita Médica</b>\n` +
@@ -66,23 +197,40 @@ export async function sendVetTelegramNotification(payload: TelegramNotificationP
              `\n<i>Monitoreo Clínico Axioma Vet</i>`;
       break;
 
+    case 'daily_digest':
+      text = `📊 <b>Resumen Diario de la Clínica</b>\n` +
+             `🏥 <b>Clínica:</b> ${payload.clinicName}\n` +
+             `📅 <b>Fecha:</b> ${payload.date || new Date().toLocaleDateString('es-EC')}\n\n`;
+      if (payload.summaryItems && payload.summaryItems.length > 0) {
+        payload.summaryItems.forEach(item => {
+          text += `• <b>${item.title}:</b> ${item.count}\n`;
+        });
+      } else {
+        text += payload.details || 'Agenda del día lista para revisión.\n';
+      }
+      text += `\n<i>Que tengas una excelente jornada médica. Axioma Vet</i>`;
+      break;
+
     case 'test':
     default:
-      text = `🔔 <b>¡Conexión Exitosa con Axioma Vet!</b>\n` +
+      text = `🔔 <b>¡Conexión Exitosa con Axioma Vet!</b>\n\n` +
              `🏥 <b>Clínica:</b> ${payload.clinicName}\n` +
-             `✅ El sistema de notificaciones de Telegram para usuarios finales ha sido verificado correctamente.\n` +
-             `📅 <b>Fecha:</b> ${new Date().toLocaleString('es-EC')}\n` +
-             `\n<i>Tu equipo recibirá alertas de citas, vacunas y pacientes directamente en este chat.</i>`;
+             `👤 <b>Destinatario:</b> ${config.recipientLabel || (config.channelType === 'clinic_group' ? 'Grupo Clínica' : 'Doctor')}\n` +
+             `📱 <b>Canal:</b> ${config.channelType === 'clinic_group' ? 'Grupo de la Clínica 👥' : 'Chat Privado del Doctor 🩺'}\n` +
+             `⏰ <b>Horario activo:</b> ${config.schedule.startTime} - ${config.schedule.endTime}\n` +
+             `📅 <b>Días:</b> ${config.schedule.daysOfWeek.map(d => ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][d]).join(', ')}\n\n` +
+             `✅ <i>Las notificaciones de citas, vacunas y alertas clínicas llegarán a este chat según tus preferencias configuradas.</i>`;
       break;
   }
 
+  // 7. Send Request to Telegram Bot API
   try {
-    const url = `https://api.telegram.org/bot${VET_CLIENT_BOT_TOKEN}/sendMessage`;
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chat_id: payload.chatId,
+        chat_id: config.chatId.trim(),
         text,
         parse_mode: 'HTML',
       }),
@@ -90,7 +238,8 @@ export async function sendVetTelegramNotification(payload: TelegramNotificationP
 
     const data = await res.json();
     if (!res.ok || !data.ok) {
-      return { success: false, error: data.description || 'Error al comunicarse con Telegram API' };
+      const errMsg = data.description || 'Error devuelto por la API de Telegram';
+      return { success: false, error: errMsg };
     }
 
     return { success: true, messageId: data.result?.message_id };
@@ -98,3 +247,6 @@ export async function sendVetTelegramNotification(payload: TelegramNotificationP
     return { success: false, error: err.message || 'Error de red al conectar con Telegram' };
   }
 }
+
+// Backwards-compatible export
+export { dispatchVetTelegramNotification as sendVetTelegramNotification };

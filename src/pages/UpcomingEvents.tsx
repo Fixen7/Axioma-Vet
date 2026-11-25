@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Syringe, FileText, Scissors, Cake, ArrowLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { Calendar, Syringe, FileText, Scissors, Cake, ArrowLeft, ChevronRight, AlertCircle, Bell, Send, CheckCircle2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useVetContext } from '../context/VetContext';
+import { useAuth } from '../context/AuthContext';
 import type { Patient } from '../services/types';
 import { parseLocalDate } from '../utils/date';
 import { useTranslation } from '../i18n';
+import { NotificationSettingsModal } from '../components/NotificationSettingsModal';
+import { 
+  loadTelegramNotificationConfig, 
+  dispatchVetTelegramNotification 
+} from '../services/vetTelegramNotificationService';
 
 interface UpcomingEvent {
   id: string;
@@ -21,10 +27,14 @@ interface UpcomingEvent {
 
 export default function UpcomingEvents() {
   const navigate = useNavigate();
-  const { patients, getAllVaccines, getAllConsultations, getAllSurgeries } = useVetContext();
+  const { patients, getAllVaccines, getAllConsultations, getAllSurgeries, settings } = useVetContext();
+  const { activeWorkspaceId } = useAuth();
   const { lang, intlLocale, t } = useTranslation();
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
+  const [isSendingDigest, setIsSendingDigest] = useState(false);
+  const [digestStatus, setDigestStatus] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadEvents() {
@@ -177,6 +187,45 @@ export default function UpcomingEvents() {
     return { label: t(`En ${diffDays} días`, `In ${diffDays} days`), isUrgent: false };
   };
 
+  const handleSendTelegramDigest = async () => {
+    const config = loadTelegramNotificationConfig(activeWorkspaceId);
+    if (!config.enabled || !config.chatId) {
+      setIsNotifModalOpen(true);
+      return;
+    }
+
+    setIsSendingDigest(true);
+    setDigestStatus(null);
+
+    const urgentCount = events.filter(e => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const diffTime = e.date.getTime() - today.getTime();
+      return Math.round(diffTime / (1000 * 60 * 60 * 24)) <= 1;
+    }).length;
+
+    const res = await dispatchVetTelegramNotification({
+      type: 'daily_digest',
+      clinicName: settings?.clinicName || 'Axioma Vet',
+      summaryItems: [
+        { title: t('Eventos en las próximas 48 horas', 'Events in next 48h'), count: urgentCount },
+        { title: t('Total eventos próximos 30 días', 'Total upcoming events (30d)'), count: events.length },
+        { title: t('Vacunas programadas', 'Scheduled vaccines'), count: events.filter(e => e.type === 'vaccine').length },
+        { title: t('Controles clínicos / Cirugías', 'Clinical checkups / Surgeries'), count: events.filter(e => e.type === 'consultation' || e.type === 'surgery').length }
+      ],
+      forceIgnoreSchedule: true
+    }, config, activeWorkspaceId);
+
+    setIsSendingDigest(false);
+    if (res.success) {
+      setDigestStatus(t('¡Resumen enviado a Telegram!', 'Digest sent to Telegram!'));
+      setTimeout(() => setDigestStatus(null), 4000);
+    } else {
+      setDigestStatus(res.error || t('Error al enviar resumen', 'Failed to send digest'));
+      setTimeout(() => setDigestStatus(null), 4000);
+    }
+  };
+
   return (
     <div className="bg-background text-on-background min-h-screen flex flex-col items-center p-4 md:p-container-padding antialiased">
       <header className="w-full max-w-4xl flex items-center justify-between mb-8 z-10">
@@ -188,7 +237,40 @@ export default function UpcomingEvents() {
             {t('Próximos Eventos', 'Upcoming Events')}
           </h2>
         </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleSendTelegramDigest}
+            disabled={isSendingDigest || isLoading}
+            title={t('Enviar resumen de la agenda a Telegram', 'Send agenda digest to Telegram')}
+            className="px-3.5 py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-xs transition-all flex items-center gap-1.5 border border-blue-200/80 active:scale-95 disabled:opacity-50"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">
+              {isSendingDigest 
+                ? t('Enviando...', 'Sending...') 
+                : t('Enviar a Telegram', 'Send to Telegram')}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsNotifModalOpen(true)}
+            title={t('Configurar Notificaciones Telegram', 'Configure Telegram Notifications')}
+            className="p-2.5 rounded-xl bg-surface-container hover:bg-surface-variant text-on-surface-variant transition-colors"
+          >
+            <Bell className="w-5 h-5 text-blue-600" />
+          </button>
+        </div>
       </header>
+
+      {digestStatus && (
+        <div className="w-full max-w-4xl mb-4 px-4 py-2.5 rounded-2xl bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold flex items-center gap-2 animate-fade-in">
+          <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+          <span>{digestStatus}</span>
+        </div>
+      )}
 
       <main className="w-full max-w-4xl z-10">
         <div className="bg-surface-container rounded-[32px] p-4 md:p-stack-padding shadow-sm min-h-[500px]">
@@ -250,6 +332,11 @@ export default function UpcomingEvents() {
           )}
         </div>
       </main>
+
+      <NotificationSettingsModal 
+        isOpen={isNotifModalOpen}
+        onClose={() => setIsNotifModalOpen(false)}
+      />
     </div>
   );
 }

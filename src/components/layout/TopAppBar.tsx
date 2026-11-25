@@ -1,8 +1,11 @@
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Bell, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../i18n';
 import { ReleaseNotesButton } from '../ReleaseNotesModal';
+import { NotificationSettingsModal } from '../NotificationSettingsModal';
+import { loadTelegramNotificationConfig } from '../../services/vetTelegramNotificationService';
 
 interface TopAppBarProps {
   title: string;
@@ -12,8 +15,15 @@ interface TopAppBarProps {
 
 export function TopAppBar({ title, subtitle, showBack = true }: TopAppBarProps) {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, activeWorkspaceId } = useAuth();
   const { t } = useTranslation();
+  const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
+  const [isTelegramEnabled, setIsTelegramEnabled] = useState(false);
+
+  useEffect(() => {
+    const cfg = loadTelegramNotificationConfig(activeWorkspaceId);
+    setIsTelegramEnabled(cfg.enabled && !!cfg.chatId);
+  }, [activeWorkspaceId, isNotifModalOpen]);
 
   const handleSignOut = async () => {
     try {
@@ -46,8 +56,19 @@ export function TopAppBar({ title, subtitle, showBack = true }: TopAppBarProps) 
       </div>
       <div className="flex items-center gap-2">
         <ReleaseNotesButton className="!w-10 !h-10 !p-2" />
-        <button className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors active:scale-95 text-on-surface-variant">
+        <button 
+          onClick={() => setIsNotifModalOpen(true)}
+          title={t('Notificaciones en Telegram', 'Telegram Notifications')}
+          aria-label="Abrir configuración de notificaciones"
+          className="relative w-12 h-12 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors active:scale-95 text-on-surface-variant"
+        >
           <Bell className="w-6 h-6" />
+          {isTelegramEnabled && (
+            <span 
+              title={t('Notificaciones activas', 'Notifications active')}
+              className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white" 
+            />
+          )}
         </button>
         <button 
           onClick={handleSignOut}
@@ -57,6 +78,11 @@ export function TopAppBar({ title, subtitle, showBack = true }: TopAppBarProps) 
           <LogOut className="w-5 h-5" />
         </button>
       </div>
+
+      <NotificationSettingsModal 
+        isOpen={isNotifModalOpen}
+        onClose={() => setIsNotifModalOpen(false)}
+      />
     </header>
   );
 }
