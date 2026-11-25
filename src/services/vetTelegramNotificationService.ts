@@ -6,7 +6,7 @@
  * (The developer alerts instance @Axioma_Taxes_bot is isolated for infra/payment approvals).
  */
 
-const VET_CLIENT_BOT_TOKEN = (import.meta as any).env?.VITE_VET_TELEGRAM_BOT_TOKEN || '9028028768:AAHbISh0m3W_Xs4vlRnK-sOxZvWoJEgx6h8';
+const VET_CLIENT_BOT_TOKEN = (import.meta as any).env?.VITE_VET_TELEGRAM_BOT_TOKEN || '';
 
 export interface TelegramNotificationPayload {
   chatId: string;
