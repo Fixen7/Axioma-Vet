@@ -17,7 +17,7 @@ export function getEffectiveBotToken(customToken?: string): string {
   if (customToken && customToken.trim()) {
     return customToken.trim();
   }
-  return (import.meta as any).env?.VITE_VET_TELEGRAM_BOT_TOKEN || '9028028768:AAGqjKsqN9awZ4vfNzaYK4UoKqUXm1dpKgE';
+  return (import.meta as any).env?.VITE_VET_TELEGRAM_BOT_TOKEN || '';
 }
 
 /**
