@@ -116,10 +116,24 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
   };
 
   const handleTestConnection = async () => {
-    if (!config.chatId.trim()) {
+    if (!config.botToken?.trim()) {
       setTestResult({
         success: false,
-        message: t('Por favor ingresa primero tu Chat ID de Telegram.', 'Please enter your Telegram Chat ID first.')
+        message: t(
+          'Por favor ingresa primero el Bot Token de tu bot (obtenido en @BotFather).',
+          'Please enter your clinic Bot Token first (from @BotFather).'
+        )
+      });
+      return;
+    }
+
+    if (!config.chatId?.trim()) {
+      setTestResult({
+        success: false,
+        message: t(
+          'Por favor ingresa tu Chat ID de Telegram (o el ID del grupo).',
+          'Please enter your Telegram Chat ID first.'
+        )
       });
       return;
     }
@@ -309,38 +323,49 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
             </div>
 
             {/* Guided Step 1 & 2 Cards */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/60 to-indigo-50/40 border border-blue-100/80 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/60 to-indigo-50/40 border border-blue-100/80 space-y-4">
+              {/* PASO 1: BOT TOKEN PROPIO DE LA CLÍNICA */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-start gap-2.5">
                   <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                     1
                   </span>
                   <div>
                     <p className="font-semibold text-slate-800 text-xs sm:text-sm">
-                      {config.channelType === 'private_doctor'
-                        ? t('Abre nuestro Bot en Telegram e inicia chat', 'Open our Telegram Bot and tap start')
-                        : t('Agrega el Bot a tu grupo de Telegram', 'Add the Bot to your Telegram group')}
+                      {t('Bot de Telegram de tu Clínica', 'Your Clinic Telegram Bot')}
                     </p>
                     <p className="text-[11px] text-slate-500">
-                      {config.channelType === 'private_doctor'
-                        ? t('Toca el botón azul para abrir @Axioma_Taxes_bot y presiona /start.', 'Tap the blue button to open @Axioma_Taxes_bot and press /start.')
-                        : t('Busca @Axioma_Taxes_bot y agrégalo como miembro de tu grupo clínico.', 'Search @Axioma_Taxes_bot and add it as a member to your clinic group.')}
+                      {t('Crea tu bot privado gratis en', 'Create your private bot for free in')}{' '}
+                      <a
+                        href="https://t.me/BotFather"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 font-semibold underline inline-flex items-center gap-0.5"
+                      >
+                        @BotFather <ExternalLink className="w-2.5 h-2.5 inline" />
+                      </a>{' '}
+                      {t('(envía /newbot, ponle el nombre de tu veterinaria y copia el Token).', '(send /newbot, name your clinic bot, and copy the Token).')}
                     </p>
                   </div>
                 </div>
 
-                <a
-                  href="https://t.me/Axioma_Taxes_bot"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/20 shrink-0"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>{t('Abrir Telegram', 'Open Telegram')}</span>
-                </a>
+                <div className="w-full sm:w-56 shrink-0">
+                  <input
+                    type="password"
+                    value={config.botToken || ''}
+                    onChange={(e) => {
+                      const updated = { ...config, botToken: e.target.value };
+                      setConfig(updated);
+                      saveTelegramNotificationConfig(updated, activeWorkspaceId);
+                    }}
+                    placeholder="Token: 123456:ABC-DEF..."
+                    className="w-full px-3 py-1.5 rounded-xl border border-blue-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 text-xs font-mono placeholder:text-slate-400"
+                  />
+                </div>
               </div>
 
-              <div className="border-t border-blue-100/80 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              {/* PASO 2: CHAT ID DESTINO */}
+              <div className="border-t border-blue-100/80 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-start gap-2.5">
                   <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                     2
@@ -352,21 +377,22 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
                         : t('Pega el ID del grupo de la clínica', 'Paste the clinic group ID')}
                     </p>
                     <p className="text-[11px] text-slate-500">
-                      {t('¿No sabes cuál es tu ID? Toca', "Don't know your ID? Tap")}{' '}
+                      {config.channelType === 'private_doctor'
+                        ? t('Abre tu bot en Telegram, pulsa /start y obtén tu ID en', 'Open your bot in Telegram, tap /start, and get your ID at')
+                        : t('Agrega tu bot al grupo de la clínica y obtén el ID con', 'Add your bot to the clinic group and get the ID with')}{' '}
                       <a 
                         href="https://t.me/userinfobot" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-blue-600 font-semibold underline"
+                        className="text-blue-600 font-semibold underline inline-flex items-center gap-0.5"
                       >
-                        @userinfobot
-                      </a>{' '}
-                      {t('y copia el número que te entrega.', 'and copy the number it provides.')}
+                        @userinfobot <ExternalLink className="w-2.5 h-2.5 inline" />
+                      </a>.
                     </p>
                   </div>
                 </div>
 
-                <div className="w-full sm:w-48 shrink-0">
+                <div className="w-full sm:w-56 shrink-0">
                   <input
                     type="text"
                     value={config.chatId}
