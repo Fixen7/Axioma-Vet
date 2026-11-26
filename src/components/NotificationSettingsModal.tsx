@@ -58,6 +58,7 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [setupRequiredWarning, setSetupRequiredWarning] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -68,6 +69,7 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
       setConfig(current);
       setTestResult(null);
       setSaveStatus(null);
+      setSetupRequiredWarning(null);
     }
   }, [isOpen, activeWorkspaceId, doctorName]);
 
@@ -80,6 +82,18 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
   };
 
   const handleToggleEnable = () => {
+    if (!config.enabled) {
+      if (!config.chatId?.trim() || config.lastTestStatus !== 'success') {
+        setSetupRequiredWarning(
+          t(
+            '⚠️ Tienes que configurar en este momento tu bot de Axioma Vet para poder encender las notificaciones. Es obligatorio completar el paso a paso: presiona INICIAR (/start) en @Axioma_vet_bot, pega tu Chat ID y pulsa "Enviar Mensaje de Prueba". Al recibir la confirmación se encenderá automáticamente.',
+            '⚠️ You must configure your Axioma Vet bot now to enable notifications. It is mandatory to complete setup: tap START (/start) in @Axioma_vet_bot, paste your Chat ID, and tap "Send Test Message". Once confirmed, it will turn on automatically.'
+          )
+        );
+        return;
+      }
+    }
+    setSetupRequiredWarning(null);
     const updated = { ...config, enabled: !config.enabled };
     setConfig(updated);
     saveTelegramNotificationConfig(updated, activeWorkspaceId);
@@ -143,12 +157,14 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
         setTestResult({
           success: true,
           message: t(
-            '¡Mensaje de prueba enviado con éxito a tu Telegram!',
-            'Test message successfully delivered to your Telegram!'
+            '¡Mensaje de prueba enviado con éxito a tu Telegram! Tu cuenta ya está vinculada y activa.',
+            'Test message successfully delivered to your Telegram! Your account is now linked and active.'
           )
         });
+        setSetupRequiredWarning(null);
         const updated = {
           ...config,
+          enabled: true,
           lastTestedAt: new Date().toISOString(),
           lastTestStatus: 'success' as const,
           lastErrorMessage: undefined
@@ -156,9 +172,17 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
         setConfig(updated);
         saveTelegramNotificationConfig(updated, activeWorkspaceId);
       } else {
+        const isChatNotFound = typeof res.error === 'string' && res.error.toLowerCase().includes('chat not found');
+        const detailedError = isChatNotFound
+          ? t(
+              '⚠️ Telegram indica que aún no has presionado INICIAR en el bot. Abre @Axioma_vet_bot en tu celular y pulsa el botón "INICIAR" (/start) antes de probar la conexión.',
+              '⚠️ Telegram says chat not found. Please open @Axioma_vet_bot on your phone and tap "START" (/start) before testing connection.'
+            )
+          : (res.error || t('Error al conectar con Telegram API', 'Telegram API connection error'));
+
         setTestResult({
           success: false,
-          message: res.error || t('Error al conectar con Telegram API', 'Telegram API connection error')
+          message: detailedError
         });
         const updated = {
           ...config,
@@ -253,11 +277,33 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
             </button>
           </div>
 
+          {/* ALERTA DE CONFIGURACIÓN OBLIGATORIA (CUANDO INTENTA ENCENDER SIN HABER VINCULADO) */}
+          {setupRequiredWarning && (
+            <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-400 text-amber-950 flex items-start gap-3.5 shadow-sm animate-fade-in">
+              <div className="p-2 rounded-xl bg-amber-200/70 text-amber-900 shrink-0 mt-0.5">
+                <AlertTriangle className="w-5 h-5 text-amber-800" />
+              </div>
+              <div className="text-xs space-y-1.5 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-amber-950 text-sm">
+                    {t('¡Configuración Obligatoria Requerida!', 'Mandatory Setup Required!')}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-bold text-[10px] uppercase">
+                    {t('Paso previo obligatorio', 'Mandatory prior step')}
+                  </span>
+                </div>
+                <p className="text-amber-900 leading-relaxed font-medium">
+                  {setupRequiredWarning}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* 2. DÓNDE: DESTINO Y PASOS SIMPLES */}
           <div className="space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-slate-500" />
-              {t('1. Conexión Rápida en 2 Pasos', '1. Quick 2-Step Connection')}
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-blue-600" />
+              {t('1. Vinculación Obligatoria en 3 Pasos', '1. Mandatory 3-Step Connection')}
             </h3>
 
             {/* AVISO CLARO: REQUISITO DE CELULAR Y TELEGRAM INSTALADO */}
@@ -270,13 +316,13 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
                   <span>{t('Requisito indispensable para configurar:', 'Essential setup requirement:')}</span>
                   <span className="px-2 py-0.5 rounded-md bg-amber-200/80 text-amber-900 font-bold text-[10px] uppercase tracking-wide flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3 text-amber-800" />
-                    <span>{t('Requiere Celular', 'Phone Required')}</span>
+                    <span>{t('Requiere Celular con Telegram', 'Phone with Telegram Required')}</span>
                   </span>
                 </p>
                 <p className="text-amber-800/90 leading-relaxed text-[11px]">
                   {t(
-                    'Debes tener instalada la aplicación de Telegram en tu teléfono celular con tu cuenta activa. Te recomendamos escanear el código QR que verás abajo con la cámara de tu celular para vincularlo en segundos.',
-                    'You must have the Telegram app installed on your smartphone with an active account. We recommend scanning the QR code below with your phone camera to link in seconds.'
+                    'Debes tener instalada la aplicación de Telegram en tu teléfono celular con tu sesión iniciada. Te recomendamos escanear el código QR con la cámara de tu celular para abrir el bot y presionar INICIAR en segundos.',
+                    'You must have the Telegram app installed on your smartphone with an active account. We recommend scanning the QR code with your phone camera to open the bot and tap START in seconds.'
                   )}
                 </p>
               </div>
@@ -335,37 +381,40 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
               </div>
             </div>
 
-            {/* Guided Step 1 & 2 Cards */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/60 to-indigo-50/40 border border-blue-100/80 space-y-4">
-              {/* PASO 1: ABRIR EL BOT OFICIAL DE AXIOMA VET CON QR O BOTÓN */}
+            {/* Guided Step 1, 2 & 3 Cards */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-slate-50 border border-blue-200/70 space-y-4">
+              
+              {/* PASO 1: ABRIR EL BOT Y PRESIONAR INICIAR */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-2.5 flex-1">
                   <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                     1
                   </span>
                   <div>
-                    <p className="font-semibold text-slate-800 text-xs sm:text-sm">
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-slate-800 text-xs sm:text-sm">
+                        {config.channelType === 'private_doctor'
+                          ? t('PASO 1 (OBLIGATORIO): Presiona INICIAR (/start) en @Axioma_vet_bot', 'STEP 1 (MANDATORY): Tap START (/start) in @Axioma_vet_bot')
+                          : t('PASO 1 (OBLIGATORIO): Agrega @Axioma_vet_bot a tu grupo', 'STEP 1 (MANDATORY): Add @Axioma_vet_bot to your group')}
+                      </p>
+                    </div>
+                    <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
                       {config.channelType === 'private_doctor'
-                        ? t('Abre @Axioma_vet_bot con tu Celular', 'Open @Axioma_vet_bot with your Phone')
-                        : t('Agrega @Axioma_vet_bot a tu grupo', 'Add @Axioma_vet_bot to your group')}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      {config.channelType === 'private_doctor'
-                        ? t('Abre la app de Telegram en tu celular o escanea el código QR y pulsa INICIAR (/start).', 'Open Telegram on your phone or scan the QR code and tap START (/start).')
-                        : t('En tu celular, busca @Axioma_vet_bot en Telegram y agrégalo como miembro a tu grupo clínico.', 'On your phone, search @Axioma_vet_bot in Telegram and add it to your clinic group.')}
+                        ? t('Telegram prohíbe que el bot envíe mensajes si no inicias la conversación primero. Abre @Axioma_vet_bot en tu celular o escanea el QR y pulsa INICIAR (/start).', 'Telegram forbids bots from messaging users who have not started the chat first. Open @Axioma_vet_bot on your phone or scan the QR code and tap START (/start).')
+                        : t('En tu celular, busca @Axioma_vet_bot en Telegram y agrégalo como miembro a tu grupo clínico de trabajo.', 'On your phone, search @Axioma_vet_bot in Telegram and add it to your clinic group.')}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0 self-center sm:self-auto">
                   {/* QR Code thumbnail for scanning from phone */}
-                  <div className="hidden sm:flex flex-col items-center p-1.5 bg-white rounded-xl border border-blue-200/80 shadow-xs">
+                  <div className="hidden sm:flex flex-col items-center p-1.5 bg-white rounded-xl border border-blue-200 shadow-xs">
                     <img 
                       src="https://api.qrserver.com/v1/create-qr-code/?size=84x84&margin=2&data=https://t.me/Axioma_vet_bot" 
                       alt="QR Axioma Vet Bot"
                       className="w-16 h-16 rounded-lg"
                     />
-                    <span className="text-[9px] font-semibold text-slate-400 mt-1">
+                    <span className="text-[9px] font-semibold text-slate-500 mt-1">
                       {t('Escanear QR', 'Scan QR')}
                     </span>
                   </div>
@@ -377,24 +426,24 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
                     className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-sm shadow-blue-500/20 shrink-0"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    <span>{t('Abrir en Telegram', 'Open in Telegram')}</span>
+                    <span>{t('Abrir e Iniciar Bot', 'Open & Start Bot')}</span>
                   </a>
                 </div>
               </div>
 
-              {/* PASO 2: CHAT ID DESTINO */}
+              {/* PASO 2: PEGAR EL CHAT ID */}
               <div className="border-t border-blue-100/80 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-start gap-2.5">
+                <div className="flex items-start gap-2.5 flex-1">
                   <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                     2
                   </span>
                   <div>
-                    <p className="font-semibold text-slate-800 text-xs sm:text-sm">
+                    <p className="font-bold text-slate-800 text-xs sm:text-sm">
                       {config.channelType === 'private_doctor'
-                        ? t('Pega tu Chat ID personal de Telegram', 'Paste your personal Telegram Chat ID')
-                        : t('Pega el ID del grupo de la clínica', 'Paste the clinic group ID')}
+                        ? t('PASO 2 (OBLIGATORIO): Pega tu Chat ID personal de Telegram', 'STEP 2 (MANDATORY): Paste your personal Telegram Chat ID')
+                        : t('PASO 2 (OBLIGATORIO): Pega el ID del grupo de la clínica', 'STEP 2 (MANDATORY): Paste clinic group ID')}
                     </p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-slate-600 mt-0.5">
                       {config.channelType === 'private_doctor'
                         ? t('¿No sabes cuál es tu número? Abre', "Don't know your ID number? Open")
                         : t('Obtén el ID de tu grupo clínico con', 'Get your clinic group ID with')}{' '}
@@ -406,7 +455,7 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
                       >
                         @userinfobot <ExternalLink className="w-2.5 h-2.5 inline" />
                       </a>{' '}
-                      {t('(te da tu número en 1 segundo).', '(gives you your number in 1 second).')}
+                      {t('(te entrega tu ID numérico en 1 segundo).', '(gives you your numeric ID in 1 second).')}
                     </p>
                   </div>
                 </div>
@@ -416,15 +465,62 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
                     type="text"
                     value={config.chatId}
                     onChange={(e) => {
-                      const updated = { ...config, chatId: e.target.value };
+                      const updated = { 
+                        ...config, 
+                        chatId: e.target.value,
+                        lastTestStatus: undefined 
+                      };
                       setConfig(updated);
                       saveTelegramNotificationConfig(updated, activeWorkspaceId);
                     }}
-                    placeholder={config.channelType === 'clinic_group' ? '-100xxxxxxxxxx' : '123456789'}
-                    className="w-full px-3 py-1.5 rounded-xl border border-blue-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 text-xs font-mono placeholder:text-slate-400"
+                    placeholder={config.channelType === 'clinic_group' ? '-100xxxxxxxxxx' : 'Ej: 6022360968'}
+                    className="w-full px-3 py-2 rounded-xl border border-blue-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 text-xs font-mono placeholder:text-slate-400 shadow-xs"
                   />
                 </div>
               </div>
+
+              {/* PASO 3: PROBAR CONEXIÓN Y ENCENDER */}
+              <div className="border-t border-blue-100/80 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-2.5 flex-1">
+                  <span className={`w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 ${
+                    config.lastTestStatus === 'success' 
+                      ? 'bg-emerald-600 text-white' 
+                      : 'bg-blue-600 text-white'
+                  }`}>
+                    {config.lastTestStatus === 'success' ? '✓' : '3'}
+                  </span>
+                  <div>
+                    <p className="font-bold text-slate-800 text-xs sm:text-sm">
+                      {t('PASO 3 (OBLIGATORIO): Enviar Mensaje de Prueba y Activar', 'STEP 3 (MANDATORY): Send Test Message & Activate')}
+                    </p>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      {t(
+                        'Verifica que el bot tenga permiso para enviarte alertas. Al recibir el mensaje de confirmación en tu Telegram, el bot se encenderá automáticamente.',
+                        'Verify the bot has permission to message you. Upon receiving confirmation on Telegram, notifications will turn on automatically.'
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleTestConnection}
+                  disabled={isTesting}
+                  className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-sm shadow-blue-500/20 shrink-0 disabled:opacity-50"
+                >
+                  {isTesting ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5" />
+                  )}
+                  <span>
+                    {isTesting 
+                      ? t('Enviando prueba...', 'Sending test...') 
+                      : t('Enviar Mensaje de Prueba', 'Send Test Message')}
+                  </span>
+                </button>
+              </div>
+
             </div>
 
             {/* OPCIONES AVANZADAS: BOT PROPIO (MARCA BLANCA OPCIONAL) */}
