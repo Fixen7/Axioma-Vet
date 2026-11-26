@@ -116,22 +116,11 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
   };
 
   const handleTestConnection = async () => {
-    if (!config.botToken?.trim()) {
-      setTestResult({
-        success: false,
-        message: t(
-          'Por favor ingresa primero el Bot Token de tu bot (obtenido en @BotFather).',
-          'Please enter your clinic Bot Token first (from @BotFather).'
-        )
-      });
-      return;
-    }
-
     if (!config.chatId?.trim()) {
       setTestResult({
         success: false,
         message: t(
-          'Por favor ingresa tu Chat ID de Telegram (o el ID del grupo).',
+          'Por favor ingresa primero tu Chat ID de Telegram (o el ID del grupo).',
           'Please enter your Telegram Chat ID first.'
         )
       });
@@ -324,7 +313,7 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
 
             {/* Guided Step 1 & 2 Cards */}
             <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/60 to-indigo-50/40 border border-blue-100/80 space-y-4">
-              {/* PASO 1: BOT TOKEN PROPIO DE LA CLÍNICA */}
+              {/* PASO 1: ABRIR EL BOT OFICIAL DE AXIOMA VET */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-start gap-2.5">
                   <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
@@ -332,36 +321,27 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
                   </span>
                   <div>
                     <p className="font-semibold text-slate-800 text-xs sm:text-sm">
-                      {t('Bot de Telegram de tu Clínica', 'Your Clinic Telegram Bot')}
+                      {config.channelType === 'private_doctor'
+                        ? t('Abre nuestro Bot Oficial en Telegram', 'Open our Official Telegram Bot')
+                        : t('Agrega nuestro Bot Oficial a tu grupo', 'Add our Official Bot to your group')}
                     </p>
                     <p className="text-[11px] text-slate-500">
-                      {t('Crea tu bot privado gratis en', 'Create your private bot for free in')}{' '}
-                      <a
-                        href="https://t.me/BotFather"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 font-semibold underline inline-flex items-center gap-0.5"
-                      >
-                        @BotFather <ExternalLink className="w-2.5 h-2.5 inline" />
-                      </a>{' '}
-                      {t('(envía /newbot, ponle el nombre de tu veterinaria y copia el Token).', '(send /newbot, name your clinic bot, and copy the Token).')}
+                      {config.channelType === 'private_doctor'
+                        ? t('Toca el botón azul para abrir @Axioma_vet_bot y presiona INICIAR (/start).', 'Tap the blue button to open @Axioma_vet_bot and tap START (/start).')
+                        : t('Busca @Axioma_vet_bot y agrégalo como miembro a tu grupo de la clínica.', 'Search @Axioma_vet_bot and add it as a member to your clinic group.')}
                     </p>
                   </div>
                 </div>
 
-                <div className="w-full sm:w-56 shrink-0">
-                  <input
-                    type="password"
-                    value={config.botToken || ''}
-                    onChange={(e) => {
-                      const updated = { ...config, botToken: e.target.value };
-                      setConfig(updated);
-                      saveTelegramNotificationConfig(updated, activeWorkspaceId);
-                    }}
-                    placeholder="Token: 123456:ABC-DEF..."
-                    className="w-full px-3 py-1.5 rounded-xl border border-blue-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 text-xs font-mono placeholder:text-slate-400"
-                  />
-                </div>
+                <a
+                  href="https://t.me/Axioma_vet_bot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-sm shadow-blue-500/20 shrink-0"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>{t('Abrir @Axioma_vet_bot', 'Open @Axioma_vet_bot')}</span>
+                </a>
               </div>
 
               {/* PASO 2: CHAT ID DESTINO */}
@@ -378,8 +358,8 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
                     </p>
                     <p className="text-[11px] text-slate-500">
                       {config.channelType === 'private_doctor'
-                        ? t('Abre tu bot en Telegram, pulsa /start y obtén tu ID en', 'Open your bot in Telegram, tap /start, and get your ID at')
-                        : t('Agrega tu bot al grupo de la clínica y obtén el ID con', 'Add your bot to the clinic group and get the ID with')}{' '}
+                        ? t('¿No sabes cuál es tu número? Abre', "Don't know your ID number? Open")
+                        : t('Obtén el ID de tu grupo clínico con', 'Get your clinic group ID with')}{' '}
                       <a 
                         href="https://t.me/userinfobot" 
                         target="_blank" 
@@ -387,7 +367,8 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
                         className="text-blue-600 font-semibold underline inline-flex items-center gap-0.5"
                       >
                         @userinfobot <ExternalLink className="w-2.5 h-2.5 inline" />
-                      </a>.
+                      </a>{' '}
+                      {t('(te da tu número en 1 segundo).', '(gives you your number in 1 second).')}
                     </p>
                   </div>
                 </div>
@@ -407,6 +388,32 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
                 </div>
               </div>
             </div>
+
+            {/* OPCIONES AVANZADAS: BOT PROPIO (MARCA BLANCA OPCIONAL) */}
+            <details className="text-xs text-slate-500">
+              <summary className="cursor-pointer font-medium text-slate-500 hover:text-blue-600 transition-colors py-1">
+                ⚙️ {t('Opciones avanzadas: Usar bot personalizado de mi clínica', 'Advanced options: Use custom clinic bot')}
+              </summary>
+              <div className="mt-2 p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  {t(
+                    'Por defecto todas las alertas se envían a través del Bot Oficial @Axioma_vet_bot. Si deseas que los mensajes lleven el nombre propio de tu clínica, crea un bot en @BotFather y pega tu Token aquí:',
+                    'By default alerts are delivered through the Official @Axioma_vet_bot. If you want messages with your own clinic branding, create a bot in @BotFather and paste your Token here:'
+                  )}
+                </p>
+                <input
+                  type="password"
+                  value={config.botToken || ''}
+                  onChange={(e) => {
+                    const updated = { ...config, botToken: e.target.value };
+                    setConfig(updated);
+                    saveTelegramNotificationConfig(updated, activeWorkspaceId);
+                  }}
+                  placeholder={t('Opcional: Dejar vacío para usar @Axioma_vet_bot', 'Optional: Leave empty to use @Axioma_vet_bot')}
+                  className="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-xs font-mono placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+            </details>
 
             {/* Recipient Doctor Name */}
             <div>
