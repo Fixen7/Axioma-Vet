@@ -12,7 +12,9 @@ import {
   Power,
   Loader2,
   Sliders,
-  Check
+  Check,
+  Smartphone,
+  ShieldCheck
 } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { useAuth } from '../context/AuthContext';
@@ -258,6 +260,28 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
               {t('1. Conexión Rápida en 2 Pasos', '1. Quick 2-Step Connection')}
             </h3>
 
+            {/* AVISO CLARO: REQUISITO DE CELULAR Y TELEGRAM INSTALADO */}
+            <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 flex items-start gap-3 shadow-xs">
+              <div className="p-2 rounded-xl bg-amber-100 text-amber-800 shrink-0 mt-0.5">
+                <Smartphone className="w-4 h-4" />
+              </div>
+              <div className="text-xs space-y-1">
+                <p className="font-bold text-amber-900 flex items-center gap-1.5 flex-wrap">
+                  <span>{t('Requisito indispensable para configurar:', 'Essential setup requirement:')}</span>
+                  <span className="px-2 py-0.5 rounded-md bg-amber-200/80 text-amber-900 font-bold text-[10px] uppercase tracking-wide flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-amber-800" />
+                    <span>{t('Requiere Celular', 'Phone Required')}</span>
+                  </span>
+                </p>
+                <p className="text-amber-800/90 leading-relaxed text-[11px]">
+                  {t(
+                    'Debes tener instalada la aplicación de Telegram en tu teléfono celular con tu cuenta activa. Te recomendamos escanear el código QR que verás abajo con la cámara de tu celular para vincularlo en segundos.',
+                    'You must have the Telegram app installed on your smartphone with an active account. We recommend scanning the QR code below with your phone camera to link in seconds.'
+                  )}
+                </p>
+              </div>
+            </div>
+
             {/* Canal Switch */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div 
@@ -280,7 +304,7 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
                     {t('Chat Privado del Doctor', 'Doctor Private Chat')}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {t('Para tus citas asignadas y pacientes directos.', 'For your assigned appointments and direct patients.')}
+                    {t('Para tus citas asignadas y pacientes directos en tu celular.', 'For your assigned appointments and direct patients on your phone.')}
                   </p>
                 </div>
               </div>
@@ -305,7 +329,7 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
                     {t('Grupo de la Clínica', 'Clinic Team Group')}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {t('Alertas compartidas para todo el equipo de guardia.', 'Shared alerts for the whole on-duty staff.')}
+                    {t('Alertas compartidas para todo el equipo de guardia en Telegram.', 'Shared alerts for the whole on-duty staff on Telegram.')}
                   </p>
                 </div>
               </div>
@@ -313,35 +337,49 @@ export function NotificationSettingsModal({ isOpen, onClose }: NotificationSetti
 
             {/* Guided Step 1 & 2 Cards */}
             <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/60 to-indigo-50/40 border border-blue-100/80 space-y-4">
-              {/* PASO 1: ABRIR EL BOT OFICIAL DE AXIOMA VET */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-start gap-2.5">
+              {/* PASO 1: ABRIR EL BOT OFICIAL DE AXIOMA VET CON QR O BOTÓN */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-2.5 flex-1">
                   <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                     1
                   </span>
                   <div>
                     <p className="font-semibold text-slate-800 text-xs sm:text-sm">
                       {config.channelType === 'private_doctor'
-                        ? t('Abre nuestro Bot Oficial en Telegram', 'Open our Official Telegram Bot')
-                        : t('Agrega nuestro Bot Oficial a tu grupo', 'Add our Official Bot to your group')}
+                        ? t('Abre @Axioma_vet_bot con tu Celular', 'Open @Axioma_vet_bot with your Phone')
+                        : t('Agrega @Axioma_vet_bot a tu grupo', 'Add @Axioma_vet_bot to your group')}
                     </p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-slate-500 mt-0.5">
                       {config.channelType === 'private_doctor'
-                        ? t('Toca el botón azul para abrir @Axioma_vet_bot y presiona INICIAR (/start).', 'Tap the blue button to open @Axioma_vet_bot and tap START (/start).')
-                        : t('Busca @Axioma_vet_bot y agrégalo como miembro a tu grupo de la clínica.', 'Search @Axioma_vet_bot and add it as a member to your clinic group.')}
+                        ? t('Abre la app de Telegram en tu celular o escanea el código QR y pulsa INICIAR (/start).', 'Open Telegram on your phone or scan the QR code and tap START (/start).')
+                        : t('En tu celular, busca @Axioma_vet_bot en Telegram y agrégalo como miembro a tu grupo clínico.', 'On your phone, search @Axioma_vet_bot in Telegram and add it to your clinic group.')}
                     </p>
                   </div>
                 </div>
 
-                <a
-                  href="https://t.me/Axioma_vet_bot"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-sm shadow-blue-500/20 shrink-0"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>{t('Abrir @Axioma_vet_bot', 'Open @Axioma_vet_bot')}</span>
-                </a>
+                <div className="flex items-center gap-3 shrink-0 self-center sm:self-auto">
+                  {/* QR Code thumbnail for scanning from phone */}
+                  <div className="hidden sm:flex flex-col items-center p-1.5 bg-white rounded-xl border border-blue-200/80 shadow-xs">
+                    <img 
+                      src="https://api.qrserver.com/v1/create-qr-code/?size=84x84&margin=2&data=https://t.me/Axioma_vet_bot" 
+                      alt="QR Axioma Vet Bot"
+                      className="w-16 h-16 rounded-lg"
+                    />
+                    <span className="text-[9px] font-semibold text-slate-400 mt-1">
+                      {t('Escanear QR', 'Scan QR')}
+                    </span>
+                  </div>
+
+                  <a
+                    href="https://t.me/Axioma_vet_bot"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-sm shadow-blue-500/20 shrink-0"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>{t('Abrir en Telegram', 'Open in Telegram')}</span>
+                  </a>
+                </div>
               </div>
 
               {/* PASO 2: CHAT ID DESTINO */}
